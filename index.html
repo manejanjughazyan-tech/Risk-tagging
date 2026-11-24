@@ -493,7 +493,6 @@
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      cursor: pointer;
       transition: all 0.15s ease;
     }
 
@@ -547,6 +546,23 @@
       font-weight: 600;
     }
 
+    .sub-methods-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .sub-method-pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 5px;
+      background: rgba(16, 185, 129, 0.12);
+      color: #A7F3D0;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
     .tag-meta-right {
       display: flex;
       align-items: center;
@@ -573,13 +589,15 @@
       font-size: 12px;
       font-weight: 600;
       color: var(--text-secondary);
-      padding: 4px 8px;
+      padding: 5px 10px;
       border-radius: 6px;
       background: #111317;
       border: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: all 0.15s ease;
     }
 
-    .tag-item:hover .sim-shortcut {
+    .sim-shortcut:hover {
       color: #FFFFFF;
       border-color: var(--orange);
       background: var(--orange);
@@ -741,6 +759,31 @@
       color: #FFFFFF;
       font-weight: 800;
       box-shadow: 0 0 14px var(--orange-glow);
+    }
+
+    .sub-select-box {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border-color);
+    }
+
+    .sub-select-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--green);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .sub-select {
+      width: 100%;
+      background: var(--bg-row);
+      border: 1px solid var(--green);
+      color: #FFFFFF;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
     }
 
     /* DECISION ENGINE OUTPUT */
@@ -968,10 +1011,10 @@
         </div>
       </div>
 
-      <div class="kpi-card" onclick="goToTagsExpanded()" title="Սեղմեք՝ բոլոր 27 թեգերը բացելու համար">
+      <div class="kpi-card" onclick="goToTagsExpanded()" title="Սեղմեք՝ բոլոր 19 թեգերը բացելու համար">
         <div class="kpi-info">
           <div class="kpi-label">ՍՏԱՆԴԱՐՏ ԹԵԳԵՐ</div>
-          <div class="kpi-value">27 Թեգ</div>
+          <div class="kpi-value">19 Թեգ</div>
           <div class="kpi-sub" style="color: var(--amber);">Multi-Tag System</div>
         </div>
         <div class="kpi-icon" style="color: var(--amber);">
@@ -1048,7 +1091,7 @@
             <circle cx="11" cy="11" r="8"/>
             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
-          <input type="text" id="taxonomySearch" placeholder="Փնտրել թեգ (օր. Live Casino, P2P, KYC, Photoshop)..." oninput="renderTaxonomy()" />
+          <input type="text" id="taxonomySearch" placeholder="Փնտրել թեգ (օր. Live Casino, P2P, Verification, Photoshop)..." oninput="renderTaxonomy()" />
         </div>
         <div class="filter-controls">
           <span class="filter-label">Ռիսկի մակարդակ՝</span>
@@ -1086,7 +1129,7 @@
 
         <div class="panel-box sticky-engine">
           <div class="panel-header">
-            <h3>Decision Engine (Ավտոմատ Որոշում)</h3>
+            <h3>Decision Engine (Սիմուլյացիայի Արդյունք)</h3>
           </div>
 
           <div class="result-card">
@@ -1110,9 +1153,9 @@
           </div>
 
           <div class="result-card" style="margin-bottom: 0;">
-            <div class="result-label">Գեներացված CRM Նոթ (Standard Note)</div>
+            <div class="result-label">Գեներացված Casino Risk Նոթ (Standard Note)</div>
             <div class="crm-box" id="crmOutput"></div>
-            <button class="btn-copy" id="copyBtn" onclick="copyCrmNote()">Պատճենել CRM Նոթը (Copy Note)</button>
+            <button class="btn-copy" id="copyBtn" onclick="copyCrmNote()">Պատճենել Casino Risk Նոթը (Copy Note)</button>
           </div>
         </div>
       </div>
@@ -1149,6 +1192,14 @@
   </div>
 
   <script>
+    const VERIFICATION_SUBTYPES = [
+      "KYCAID Static Link",
+      "Verification via Call",
+      "Selfie with Current Date",
+      "Potential VIP client without KYCaid verification",
+      "Additional Verification Requested"
+    ];
+
     const CATEGORIES = [
       {
         id: "cat-1",
@@ -1163,61 +1214,60 @@
           { name: "Bonus Fraud", desc: "Բոնուսների չարաշահում (ներառյալ P2P-ի միջոցով բոնուսի լվացում և bonus hunting)", trigger: "Բոնուսային պայմանների միտումնավոր շրջանցում (ավտոմատ Blocked)", risk: "Critical" },
           { name: "Game Bug / Exploit", desc: "Խաղային պրովայդերի տեխնիկական սխալի (bug) միտումնավոր օգտագործում շահույթի համար", trigger: "Տեխնիկական խոցելիության շահագործում", risk: "Critical" },
           { name: "Opposite Betting", desc: "Հակառակ խաղադրույքներ (օր.՝ Կարմիր/Սև) շրջանառություն ապահովելու նպատակով", trigger: "Առանց իրական ռիսկի խաղադրույքներ (Turnover abuse)", risk: "High" },
-          { name: "Warning Issued", desc: "Տրվել է պաշտոնական խաղային նախազգուշացում (օր.՝ առաջին P2P դեպքի ժամանակ)", trigger: "Առաջին հայտնաբերված խաղային խախտում՝ առանց արգելափակման", risk: "Warning" },
-          { name: "Provider Blocked", desc: "Սահմանափակվել է միայն կոնկրետ խաղային պրովայդերի (օր.՝ P2P կամ Skill games) հասանելիությունը", trigger: "Մասնակի սահմանափակում՝ միայն կոնկրետ խաղի/պրովայդերի մասով", risk: "Warning" },
-          { name: "Blacklisted / Do Not Reopen", desc: "Սև ցուցակում ներառված հաճախորդ (մոնիթորինգի տակ՝ Active, եթե չկա ծանր ֆռոդ)", trigger: "Ներքին սև ցուցակ / կրկնակի վերաբացման արգելք", risk: "High" },
-          { name: "Under Investigation", desc: "Հաշիվը գտնվում է խաղային ռիսկերի ընթացիկ ուսումնասիրության փուլում", trigger: "Ակտիվ խաղային վերլուծություն՝ մինչև վերջնական որոշում", risk: "Tool/Process" },
-          { name: "Tech Issue / Compensation", desc: "Տեխնիկական խնդիր խաղային ռաունդում կամ փոխհատուցման հաշվարկ (հաշիվը մնում է Active)", trigger: "Պրովայդերի/համակարգի տեխնիկական խնդիր (INC / Round ID)", risk: "Tool/Process" }
+          { name: "Provider / Game Blocked", desc: "Սահմանափակվել է միայն կոնկրետ խաղային պրովայդերի կամ խաղի (օր.՝ P2P, Skill games) հասանելիությունը", trigger: "Մասնակի սահմանափակում՝ միայն կոնկրետ խաղի/պրովայդերի մասով", risk: "Warning" },
+          { name: "Blacklist", desc: "Հաճախորդը բացառվում է CRM թիրախավորումներից, ակցիաներից և մարքեթինգային առաջարկներից (հաշիվը մնում է Active)", trigger: "CRM թիրախներից և ակցիաներից բացառում (CRM & Promo Exclusion)", risk: "Medium" },
+          { name: "Under Investigation by CR", desc: "Հաշիվը գտնվում է Casino Risk բաժնի ընթացիկ ուսումնասիրության և վերահսկողության փուլում", trigger: "Ակտիվ խաղային վերլուծություն՝ մինչև վերջնական որոշում", risk: "Tool/Process" }
         ]
       },
       {
         id: "cat-2",
-        name: "KYC & IDENTITY VIOLATION",
-        subtitle: "Ինքնության և փաստաթղթերի խախտումներ (ներառյալ անչափահասների դեպքերը)",
+        name: "BLOCKED BY IDENTITY ISSUE",
+        subtitle: "Ինքնության և փաստաթղթերի խախտումներով արգելափակում (ներառյալ անչափահասների դեպքերը)",
         theme: "cat-crimson",
         tags: [
           { name: "Account Used by Another Person", desc: "Հաշվից փաստացի օգտվում է երրորդ անձ (3rd party usage)", trigger: "Զանգով կամ տեխնիկական տվյալներով հաստատված այլ անձի օգտագործում", risk: "Critical" },
-          { name: "Edited Document (Photoshop)", desc: "Գրաֆիկական խմբագրիչով կեղծված փաստաթուղթ", trigger: "Փաստաթղթի վրա տվյալների կամ նկարի փոփոխություն", risk: "Critical" },
-          { name: "AI / Deepfake Document", desc: "Արհեստական բանականությամբ գեներացված փաստաթուղթ կամ Deepfake սելֆի", trigger: "AI գեներացված ID կամ կեղծված տեսանյութ/սելֆի", risk: "Critical" },
+          { name: "Photoshop / AI", desc: "Գրաֆիկական խմբագրիչով կեղծված (Photoshop) կամ AI գեներացված փաստաթուղթ / Deepfake սելֆի", trigger: "Կեղծված փաստաթուղթ կամ AI գեներացված ID/սելֆի", risk: "Critical" },
           { name: "Data Inconsistency", desc: "Անձնական տվյալների անհամապատասխանություն կամ դուպլիկատ հաշվում կեղծ տվյալներ", trigger: "Անուն/ազգանուն, ծննդյան թիվ կամ փաստաթղթի տվյալների տարբերություն", risk: "High" },
           { name: "Fake User / Duplicate CNP", desc: "Գրանցում կեղծ տվյալներով կամ արդեն օգտագործվող CNP-ով", trigger: "Նույն անձնական համարով (CNP) կրկնակի գրանցման փորձ (Deleted)", risk: "Critical" },
-          { name: "Phone Number Not Owned", desc: "Գրանցված հեռախոսահամարը չի պատկանում հաճախորդին (հաշիվը մնում է Active)", trigger: "Հեռախոսահամարի պատկանելության չհաստատում", risk: "Medium" },
           { name: "Underage (<18) / Minor Involved", desc: "18-ը չլրացած անձի գրանցում կամ անչափահասի քարտի/փաստաթղթի ներգրավում", trigger: "Անչափահասի մասնակցություն (Պարտադիր Blocked, ոչ Deleted)", risk: "Critical" }
         ]
       },
       {
         id: "cat-3",
-        name: "MULTI-ACCOUNT & NETWORK",
-        subtitle: "Կրկնակի հաշիվներ և կապակցված խմբեր",
-        theme: "cat-purple",
+        name: "UNDER INVESTIGATION FOR VERIFICATION",
+        subtitle: "Վերիֆիկացիայի փուլում գտնվող հաշիվներ և ստուգման մեթոդներ",
+        theme: "cat-emerald",
         tags: [
-          { name: "Duplicate Account", desc: "Նույն անձի կողմից բացված կրկնակի հաշիվ", trigger: "Մեկ անձի անունով երկրորդ կամ ավելի հաշիվների առկայություն", risk: "High" },
-          { name: "Shared Device", desc: "Միևնույն սարքից (Device) մուտք գործած տարբեր հաշիվներ", trigger: "Նույն Device ID / Fingerprint համընկնում տարբեր հաշիվներում", risk: "Medium" },
-          { name: "Syndicate / Linked Group", desc: "Համակարգված գործող կապակցված հաշիվների խումբ (Active մոնիթորինգի տակ)", trigger: "Խմբային սխեմաներ (P2P, բոնուս հանթինգ և այլն)", risk: "High" }
+          {
+            name: "Verification Needed",
+            desc: "Պահանջվում է լրացուցիչ նույնականացում և վերիֆիկացիա հետևյալ տարբերակներից մեկով՝ KYCAID Static Link, Verification via Call, Selfie with Current Date, Potential VIP client without KYCaid verification, Additional Verification Requested",
+            trigger: "Վերիֆիկացիայի գործընթաց (ենթատեսակի ընտրությամբ)",
+            risk: "Tool/Process",
+            subtypes: VERIFICATION_SUBTYPES
+          }
         ]
       },
       {
         id: "cat-4",
-        name: "VERIFICATION FLOW & ACCOUNT STATUS",
-        subtitle: "Ստուգման գործընթաց, գործիքներ և հատուկ կարգավիճակներ",
-        theme: "cat-emerald",
+        name: "MULTI ACCOUNT",
+        subtitle: "Կրկնակի հաշիվներ, նույն սարք և կապակցված խմբեր",
+        theme: "cat-purple",
         tags: [
-          { name: "Additional Verification Requested", desc: "Պահանջվել է լրացուցիչ ստուգում (սպասում ենք հաճախորդին)", trigger: "Ուղարկվել է հարցում՝ լրացուցիչ տվյալների կամ սելֆիի համար", risk: "Tool/Process" },
-          { name: "KYCAID Static Link", desc: "Ստուգումն ուղարկվել կամ անցկացվել է KYCAID ստատիկ հղումով", trigger: "Վերիֆիկացիա KYCAID հարթակի միջոցով", risk: "Tool/Process" },
-          { name: "Verification via Call", desc: "Հաճախորդի ինքնությունը ճշտվում է զանգով / տեսազանգով", trigger: "Հեռախոսային կամ վիդեո նույնականացման նշանակում/անցկացում", risk: "Tool/Process" },
-          { name: "Selfie with Current Date", desc: "Պահանջվել է սելֆի տվյալ օրվա ամսաթվով", trigger: "Ոչ ակտիվ/նոր դեպոզիտ հաշիվների կամ կասկածելի դեպքերի ստուգում", risk: "Tool/Process" },
-          { name: "Potential VIP client without KYCaid verification", desc: "Պոտենցիալ VIP հաճախորդ՝ առանց KYCAID ստանդարտ ստուգման (մնում է Active)", trigger: "Բարձր շրջանառությամբ VIP հաճախորդի սպասարկում առանց սահմանափակման", risk: "Tool/Process" }
+          { name: "Duplicate Account", desc: "Նույն անձի կողմից բացված կրկնակի հաշիվ", trigger: "Մեկ անձի անունով երկրորդ կամ ավելի հաշիվների առկայություն", risk: "High" },
+          { name: "Same Device", desc: "Միևնույն սարքից (Device) մուտք գործած տարբեր հաշիվներ", trigger: "Նույն Device ID / Fingerprint համընկնում տարբեր հաշիվներում", risk: "Medium" },
+          { name: "Syndicate / Linked Group", desc: "Համակարգված գործող կապակցված հաշիվների խումբ (Active մոնիթորինգի տակ)", trigger: "Խմբային սխեմաներ (P2P, բոնուս հանթինգ և այլն)", risk: "High" }
         ]
       }
     ];
 
     const SOP_SCENARIOS = [
       {
-        title: "KYC Verification",
-        sub: "Ստանդարտ վերիֆիկացիայի հարցում KYCAID հարթակով",
+        title: "KYC Verification Needed",
+        sub: "Ստանդարտ վերիֆիկացիայի հարցում (KYCAID Static Link / Call / Selfie)",
         state: "Blocked For Transactions",
         reason: "Identity Verification Issue",
-        tags: ["KYCAID Static Link", "Additional Verification Requested"],
+        tags: ["Verification Needed"],
+        subtype: "KYCAID Static Link",
         ref: "TG-258940"
       },
       {
@@ -1225,7 +1275,7 @@
         sub: "Անոմալ վարքագիծ Live Casino կամ Fast/Crash խաղերում",
         state: "Active",
         reason: "—",
-        tags: ["Live Casino Risk", "Fast Games / Crash Risk", "Under Investigation"],
+        tags: ["Live Casino Risk", "Fast Games / Crash Risk", "Under Investigation by CR"],
         ref: "TG-304912"
       },
       {
@@ -1233,7 +1283,7 @@
         sub: "Հաստատված այլ անձի կողմից հաշվի օգտագործում",
         state: "Blocked",
         reason: "Identity Verification Issue",
-        tags: ["Account Used by Another Person", "Verification via Call", "Blacklisted / Do Not Reopen"],
+        tags: ["Account Used by Another Person"],
         ref: "TG-281104"
       },
       {
@@ -1241,15 +1291,15 @@
         sub: "Կեղծված կամ AI գեներացված փաստաթղթի ներկայացում",
         state: "Blocked",
         reason: "Identity Verification Issue",
-        tags: ["Edited Document (Photoshop)", "AI / Deepfake Document", "Blacklisted / Do Not Reopen"],
+        tags: ["Photoshop / AI"],
         ref: "Linked IDs: 546948, 546923"
       },
       {
-        title: "P2P Collusion (1st Warning)",
-        sub: "P2P միտումնավոր պարտություն (առաջին նախազգուշացում)",
+        title: "P2P Collusion & Linked Group",
+        sub: "P2P միտումնավոր պարտություն կամ պրովայդերի սահմանափակում",
         state: "Active",
         reason: "—",
-        tags: ["P2P Collusion", "Syndicate / Linked Group", "Warning Issued"],
+        tags: ["P2P Collusion", "Syndicate / Linked Group", "Provider / Game Blocked"],
         ref: "Partner IDs: 243871, 244421"
       },
       {
@@ -1257,7 +1307,7 @@
         sub: "Բոնուսային պայմանների չարաշահում կամ լվացում",
         state: "Blocked",
         reason: "Fraud or Suspicious Activity",
-        tags: ["Bonus Fraud", "Blacklisted / Do Not Reopen"],
+        tags: ["Bonus Fraud"],
         ref: "Linked IDs: 375414, 615589"
       },
       {
@@ -1265,7 +1315,7 @@
         sub: "Անչափահասի գրանցում կամ անչափահասի քարտի օգտագործում",
         state: "Blocked",
         reason: "Underage Gambling",
-        tags: ["Underage (<18) / Minor Involved", "Blacklisted / Do Not Reopen"],
+        tags: ["Underage (<18) / Minor Involved"],
         ref: "TG-290411"
       },
       {
@@ -1277,26 +1327,28 @@
         ref: "Existing CNP ID: 412098"
       },
       {
-        title: "Technical Disconnect / Compensation",
-        sub: "Պրովայդերի տեխնիկական խնդիր կամ փոխհատուցման հաշվարկ",
+        title: "CRM & Promo Exclusion (Blacklist)",
+        sub: "Հաճախորդի բացառում CRM թիրախներից և ակցիաներից",
         state: "Active",
         reason: "—",
-        tags: ["Tech Issue / Compensation"],
-        ref: "INC-88910"
+        tags: ["Blacklist"],
+        ref: "TG-410293"
       },
       {
         title: "Potential VIP Client (No KYCAID)",
         sub: "Պոտենցիալ VIP հաճախորդ՝ առանց KYCAID ստուգման",
         state: "Active",
         reason: "—",
-        tags: ["Potential VIP client without KYCaid verification"],
+        tags: ["Verification Needed"],
+        subtype: "Potential VIP client without KYCaid verification",
         ref: "VIP-TG-7741"
       }
     ];
 
     let activeRiskFilter = "ALL";
     let collapsedCats = {};
-    let selectedTags = new Set(["KYCAID Static Link", "Additional Verification Requested"]);
+    let selectedTags = new Set(["Verification Needed"]);
+    let selectedVerificationSubtype = "KYCAID Static Link";
     let activePresetIdx = 0;
 
     function switchTab(tabName) {
@@ -1355,11 +1407,13 @@
       CATEGORIES.forEach(cat => {
         const filteredTags = cat.tags.filter(t => {
           const matchesRisk = activeRiskFilter === "ALL" || t.risk === activeRiskFilter;
+          const matchesSub = t.subtypes && t.subtypes.some(s => s.toLowerCase().includes(q));
           const matchesQuery = !q ||
             t.name.toLowerCase().includes(q) ||
             t.desc.toLowerCase().includes(q) ||
             t.trigger.toLowerCase().includes(q) ||
-            cat.name.toLowerCase().includes(q);
+            cat.name.toLowerCase().includes(q) ||
+            matchesSub;
           return matchesRisk && matchesQuery;
         });
 
@@ -1369,22 +1423,31 @@
         const card = document.createElement("div");
         card.className = `category-card ${cat.theme} ${isCollapsed ? "collapsed" : ""}`;
 
-        const tagsHtml = filteredTags.map(t => `
-          <div class="tag-item" onclick="testTagInSimulator('${t.name.replace(/'/g, "\'")}')">
-            <div class="tag-main">
-              <div class="tag-title-row">
-                <span class="tag-label-badge">ԹԵԳ</span>
-                <span class="tag-name">${t.name}</span>
+        const tagsHtml = filteredTags.map(t => {
+          const subHtml = t.subtypes ? `
+            <div class="sub-methods-list">
+              ${t.subtypes.map(s => `<span class="sub-method-pill">${s}</span>`).join("")}
+            </div>
+          ` : "";
+
+          return `
+            <div class="tag-item">
+              <div class="tag-main">
+                <div class="tag-title-row">
+                  <span class="tag-label-badge">ԹԵԳ</span>
+                  <span class="tag-name">${t.name}</span>
+                </div>
+                <div class="tag-desc">${t.desc}</div>
+                ${subHtml}
+                <div class="tag-trigger"><strong>Trigger:</strong> ${t.trigger}</div>
               </div>
-              <div class="tag-desc">${t.desc}</div>
-              <div class="tag-trigger"><strong>Trigger:</strong> ${t.trigger}</div>
+              <div class="tag-meta-right">
+                <span class="risk-badge ${getRiskBadgeClass(t.risk)}">${t.risk}</span>
+                <button type="button" class="sim-shortcut" onclick="testTagInSimulator('${t.name.replace(/'/g, "\'")}')">Սիմուլյացիա ➔</button>
+              </div>
             </div>
-            <div class="tag-meta-right">
-              <span class="risk-badge ${getRiskBadgeClass(t.risk)}">${t.risk}</span>
-              <span class="sim-shortcut">Սիմուլյատոր ➔</span>
-            </div>
-          </div>
-        `).join("");
+          `;
+        }).join("");
 
         card.innerHTML = `
           <div class="category-header" onclick="toggleSingleCategory('${cat.id}')">
@@ -1423,6 +1486,9 @@
     function applyPreset(idx) {
       const preset = SOP_SCENARIOS[idx];
       selectedTags = new Set(preset.tags);
+      if (preset.subtype) {
+        selectedVerificationSubtype = preset.subtype;
+      }
       activePresetIdx = idx;
       document.getElementById("refInput").value = preset.ref;
       renderSimulator();
@@ -1436,6 +1502,12 @@
       }
       activePresetIdx = null;
       renderSimulator();
+    }
+
+    function changeVerificationSubtype(val) {
+      selectedVerificationSubtype = val;
+      activePresetIdx = null;
+      updateEngine();
     }
 
     function resetSimulator() {
@@ -1462,8 +1534,7 @@
 
       if (
         has("Account Used by Another Person") ||
-        has("Edited Document (Photoshop)") ||
-        has("AI / Deepfake Document") ||
+        has("Photoshop / AI") ||
         has("Data Inconsistency")
       ) {
         return { state: "Blocked", reason: "Identity Verification Issue" };
@@ -1477,32 +1548,11 @@
         return { state: "Blocked", reason: "Fraud or Suspicious Activity" };
       }
 
-      if (
-        has("Additional Verification Requested") ||
-        has("KYCAID Static Link") ||
-        has("Verification via Call") ||
-        has("Selfie with Current Date")
-      ) {
+      if (has("Verification Needed")) {
+        if (selectedVerificationSubtype === "Potential VIP client without KYCaid verification") {
+          return { state: "Active", reason: "—" };
+        }
         return { state: "Blocked For Transactions", reason: "Identity Verification Issue" };
-      }
-
-      if (
-        has("Phone Number Not Owned") ||
-        has("Potential VIP client without KYCaid verification") ||
-        has("Tech Issue / Compensation") ||
-        has("P2P Collusion") ||
-        has("Opposite Betting") ||
-        has("Warning Issued") ||
-        has("Provider Blocked") ||
-        has("Syndicate / Linked Group") ||
-        has("Shared Device") ||
-        has("Blacklisted / Do Not Reopen") ||
-        has("Live Casino Risk") ||
-        has("Fast Games / Crash Risk") ||
-        has("Slots / RTP Abuse") ||
-        has("Under Investigation")
-      ) {
-        return { state: "Active", reason: "—" };
       }
 
       return { state: "Active", reason: "—" };
@@ -1536,6 +1586,18 @@
           `;
         }).join("");
 
+        let subtypeHtml = "";
+        if (cat.id === "cat-3" && selectedTags.has("Verification Needed")) {
+          subtypeHtml = `
+            <div class="sub-select-box">
+              <label class="sub-select-label">Ընտրեք վերիֆիկացիայի ենթատեսակը (Sub-type)՝</label>
+              <select class="sub-select" onchange="changeVerificationSubtype(this.value)">
+                ${VERIFICATION_SUBTYPES.map(st => `<option value="${st}" ${selectedVerificationSubtype === st ? "selected" : ""}>${st}</option>`).join("")}
+              </select>
+            </div>
+          `;
+        }
+
         return `
           <div class="sim-cat-group">
             <div class="sim-cat-title">
@@ -1543,6 +1605,7 @@
               <span>${countInCat > 0 ? countInCat + " ընտրված" : ""}</span>
             </div>
             <div class="chips-wrap">${chipsHtml}</div>
+            ${subtypeHtml}
           </div>
         `;
       }).join("");
@@ -1561,14 +1624,18 @@
       document.getElementById("engineReason").textContent = decision.reason;
       document.getElementById("selectedCount").textContent = tagsArr.length;
 
+      const displayTags = tagsArr.map(t =>
+        t === "Verification Needed" ? `Verification Needed (${selectedVerificationSubtype})` : t
+      );
+
       const selContainer = document.getElementById("engineSelectedTags");
-      if (tagsArr.length === 0) {
+      if (displayTags.length === 0) {
         selContainer.innerHTML = `<span style="color: var(--text-muted); font-size: 12px;">Թեգ ընտրված չէ</span>`;
       } else {
-        selContainer.innerHTML = tagsArr.map(t => `<span class="matrix-tag-badge">${t}</span>`).join("");
+        selContainer.innerHTML = displayTags.map(t => `<span class="matrix-tag-badge">${t}</span>`).join("");
       }
 
-      const tagsFormatted = tagsArr.length > 0 ? tagsArr.map(t => `[${t}]`).join(" + ") : "[None]";
+      const tagsFormatted = displayTags.length > 0 ? displayTags.map(t => `[${t}]`).join(" + ") : "[None]";
       const crmText = `State: ${decision.state}\nReason: ${decision.reason}\nTags: ${tagsFormatted}\nReference: ${refVal}`;
       document.getElementById("crmOutput").textContent = crmText;
     }
@@ -1594,11 +1661,16 @@
           sc.sub.toLowerCase().includes(q) ||
           sc.state.toLowerCase().includes(q) ||
           sc.reason.toLowerCase().includes(q) ||
-          sc.tags.some(t => t.toLowerCase().includes(q));
+          sc.tags.some(t => t.toLowerCase().includes(q)) ||
+          (sc.subtype && sc.subtype.toLowerCase().includes(q));
 
         if (!match) return;
 
-        const tagsHtml = sc.tags.map(t => `<span class="matrix-tag-badge">${t}</span>`).join("");
+        const tagsHtml = sc.tags.map(t => {
+          const label = (t === "Verification Needed" && sc.subtype) ? `${t} (${sc.subtype})` : t;
+          return `<span class="matrix-tag-badge">${label}</span>`;
+        }).join("");
+
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td class="row-num">${idx + 1}</td>
