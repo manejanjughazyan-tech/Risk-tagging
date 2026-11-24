@@ -1,991 +1,1624 @@
 <!DOCTYPE html>
-<html lang="hy" class="dark">
+<html lang="hy">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TotoGaming Risk Management — Player Categorization & Tagging System</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Font Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        obsidian: {
-                            base: '#111317',
-                            card: '#181B20',
-                            row: '#1E2229',
-                            border: '#2C313A',
-                            hover: '#252A34'
-                        },
-                        toto: {
-                            orange: '#FF5500',
-                            orangeGlow: 'rgba(255, 85, 0, 0.25)',
-                            orangeDark: '#D44600'
-                        },
-                        status: {
-                            active: '#10B981',
-                            blockedTx: '#F59E0B',
-                            blocked: '#EF4444',
-                            deleted: '#8B5CF6'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TotoGaming Risk Management — Player Categorization & Tagging System</title>
+  <style>
+    :root {
+      --bg-body: #111317;
+      --bg-card: #181B20;
+      --bg-row: #1E2229;
+      --bg-hover: #252A33;
+      --border-color: #2C313A;
+      --orange: #FF5500;
+      --orange-hover: #E04B00;
+      --orange-glow: rgba(255, 85, 0, 0.28);
+      --text-main: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --green: #10B981;
+      --green-bg: rgba(16, 185, 129, 0.14);
+      --amber: #F59E0B;
+      --amber-bg: rgba(245, 158, 11, 0.14);
+      --red: #EF4444;
+      --red-bg: rgba(239, 68, 68, 0.14);
+      --purple: #A855F7;
+      --purple-bg: rgba(168, 85, 247, 0.14);
+      --blue: #3B82F6;
+      --blue-bg: rgba(59, 130, 246, 0.14);
+    }
 
-    <style>
-        body {
-            background-color: #111317;
-            color: #E2E8F0;
-            font-family: 'Inter', sans-serif;
-        }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #111317;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #2C313A;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #FF5500;
-        }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Armenian", Helvetica, Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.5;
+      font-size: 14px;
+      padding: 24px 16px 60px;
+    }
 
-        .glowing-border {
-            box-shadow: 0 0 15px rgba(255, 85, 0, 0.3);
-            border-color: #FF5500 !important;
-        }
+    .container {
+      max-width: 1360px;
+      margin: 0 auto;
+    }
 
-        .status-badge-active {
-            background-color: rgba(16, 185, 129, 0.15);
-            color: #10B981;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-        .status-badge-blockedTx {
-            background-color: rgba(245, 158, 11, 0.15);
-            color: #F59E0B;
-            border: 1px solid rgba(245, 158, 11, 0.3);
-        }
-        .status-badge-blocked {
-            background-color: rgba(239, 68, 68, 0.15);
-            color: #EF4444;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-        .status-badge-deleted {
-            background-color: rgba(139, 92, 246, 0.15);
-            color: #A78BFA;
-            border: 1px solid rgba(139, 92, 246, 0.3);
-        }
+    /* HEADER */
+    .header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
 
-        /* Print formatting */
-        @media print {
-            header, footer, nav, .no-print {
-                display: none !important;
-            }
-            body {
-                background: #ffffff !important;
-                color: #000000 !important;
-            }
-            .print-container {
-                display: block !important;
-                background: #ffffff !important;
-                color: #000000 !important;
-            }
-            .bg-obsidian-card, .bg-obsidian-row {
-                background-color: #f8fafc !important;
-                border: 1px solid #cbd5e1 !important;
-                color: #000000 !important;
-            }
-            .text-white, .text-gray-200, .text-gray-300 {
-                color: #0f172a !important;
-            }
-        }
-    </style>
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 85, 0, 0.12);
+      border: 1px solid rgba(255, 85, 0, 0.45);
+      color: var(--orange);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.6px;
+      box-shadow: 0 0 18px rgba(255, 85, 0, 0.15);
+    }
+
+    .brand-badge span.divider {
+      color: #475569;
+      font-weight: 400;
+    }
+
+    .brand-badge span.risk-txt {
+      color: #FFFFFF;
+    }
+
+    .header-title h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #FFFFFF;
+      letter-spacing: -0.2px;
+    }
+
+    .header-title p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .btn-export {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-export:hover {
+      border-color: var(--orange);
+      color: var(--orange);
+      background: rgba(255, 85, 0, 0.08);
+    }
+
+    /* KPI ROW */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 960px) {
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 540px) {
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .kpi-card:hover {
+      border-color: var(--orange);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .kpi-info .kpi-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .kpi-info .kpi-value {
+      font-size: 24px;
+      font-weight: 800;
+      color: #FFFFFF;
+      line-height: 1.15;
+    }
+
+    .kpi-info .kpi-sub {
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    .kpi-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-row);
+      border: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+
+    /* TABS BAR */
+    .tabs-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 6px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .tabs-bar {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .tab-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      color: #FFFFFF;
+      background: var(--bg-row);
+    }
+
+    .tab-btn.active {
+      background: var(--orange);
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px var(--orange-glow);
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* FILTER TOOLBAR */
+    .filter-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .search-box {
+      position: relative;
+      flex: 1 1 280px;
+      max-width: 400px;
+    }
+
+    .search-box svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+    }
+
+    .search-box input {
+      width: 100%;
+      background: var(--bg-body);
+      border: 1px solid var(--border-color);
+      color: #FFFFFF;
+      padding: 9px 12px 9px 36px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-box input:focus {
+      border-color: var(--orange);
+    }
+
+    .filter-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-right: 4px;
+    }
+
+    .pill-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid var(--border-color);
+      background: var(--bg-row);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .pill-btn:hover {
+      border-color: #475569;
+      color: #FFFFFF;
+    }
+
+    .pill-btn.active {
+      background: var(--orange);
+      border-color: var(--orange);
+      color: #FFFFFF;
+    }
+
+    .accordion-actions {
+      display: flex;
+      gap: 6px;
+      border-left: 1px solid var(--border-color);
+      padding-left: 10px;
+    }
+
+    /* CATEGORY ACCORDION CARDS */
+    .category-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      border-left: 4px solid var(--orange);
+    }
+
+    .category-card.cat-crimson { border-left-color: var(--red); }
+    .category-card.cat-purple  { border-left-color: var(--purple); }
+    .category-card.cat-emerald { border-left-color: var(--green); }
+
+    .category-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s ease;
+    }
+
+    .category-header:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .cat-title-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .cat-badge-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cat-badge {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(255, 85, 0, 0.16);
+      color: var(--orange);
+      border: 1px solid rgba(255, 85, 0, 0.35);
+    }
+
+    .cat-crimson .cat-badge {
+      background: var(--red-bg);
+      color: var(--red);
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+
+    .cat-purple .cat-badge {
+      background: var(--purple-bg);
+      color: var(--purple);
+      border-color: rgba(168, 85, 247, 0.35);
+    }
+
+    .cat-emerald .cat-badge {
+      background: var(--green-bg);
+      color: var(--green);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+
+    .category-header h2 {
+      font-size: 16px;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: 0.3px;
+    }
+
+    .category-header p {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .cat-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .tag-count-pill {
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(255, 85, 0, 0.12);
+      color: var(--orange);
+      border: 1px solid rgba(255, 85, 0, 0.35);
+    }
+
+    .cat-crimson .tag-count-pill {
+      background: var(--red-bg);
+      color: var(--red);
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+
+    .cat-purple .tag-count-pill {
+      background: var(--purple-bg);
+      color: var(--purple);
+      border-color: rgba(168, 85, 247, 0.35);
+    }
+
+    .cat-emerald .tag-count-pill {
+      background: var(--green-bg);
+      color: var(--green);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+
+    .chevron-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      background: var(--bg-row);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      transition: transform 0.2s ease;
+    }
+
+    .category-card.collapsed .chevron-btn {
+      transform: rotate(-90deg);
+    }
+
+    .category-body {
+      padding: 0 20px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .category-card.collapsed .category-body {
+      display: none;
+    }
+
+    /* TAG ITEM ROW */
+    .tag-item {
+      background: var(--bg-row);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tag-item:hover {
+      border-color: var(--orange);
+      background: var(--bg-hover);
+    }
+
+    .tag-main {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .tag-title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tag-label-badge {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: #111317;
+      color: var(--orange);
+      border: 1px solid var(--border-color);
+    }
+
+    .tag-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+
+    .tag-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .tag-trigger {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .tag-trigger strong {
+      color: var(--orange);
+      font-weight: 600;
+    }
+
+    .tag-meta-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .risk-badge {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .risk-critical { background: var(--red-bg); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.35); }
+    .risk-high     { background: rgba(255, 85, 0, 0.15); color: var(--orange); border: 1px solid rgba(255, 85, 0, 0.35); }
+    .risk-medium   { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.35); }
+    .risk-warning  { background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(168, 85, 247, 0.35); }
+    .risk-process  { background: var(--green-bg); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.35); }
+
+    .sim-shortcut {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: #111317;
+      border: 1px solid var(--border-color);
+    }
+
+    .tag-item:hover .sim-shortcut {
+      color: #FFFFFF;
+      border-color: var(--orange);
+      background: var(--orange);
+    }
+
+    /* TAB 2: LIVE FLOW SIMULATOR */
+    .sim-layout {
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 1024px) {
+      .sim-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .panel-header h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+
+    .btn-reset {
+      background: var(--bg-row);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-reset:hover {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .presets-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 640px) {
+      .presets-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .preset-btn {
+      text-align: left;
+      background: var(--bg-row);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      transition: all 0.15s ease;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--orange);
+      background: var(--bg-hover);
+    }
+
+    .preset-btn.active {
+      background: var(--orange);
+      border: 2px solid #FFFFFF;
+      color: #FFFFFF;
+      font-weight: 800;
+      box-shadow: 0 0 18px var(--orange-glow);
+    }
+
+    .preset-active-tag {
+      font-size: 10px;
+      font-weight: 800;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .sim-cat-group {
+      background: var(--bg-body);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .sim-cat-title {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--orange);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .chips-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag-chip {
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      background: var(--bg-row);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .tag-chip:hover {
+      border-color: #64748B;
+      color: #FFFFFF;
+    }
+
+    .tag-chip.selected {
+      background: var(--orange);
+      border: 2px solid #FFFFFF;
+      color: #FFFFFF;
+      font-weight: 800;
+      box-shadow: 0 0 14px var(--orange-glow);
+    }
+
+    /* DECISION ENGINE OUTPUT */
+    .sticky-engine {
+      position: sticky;
+      top: 20px;
+    }
+
+    .result-card {
+      background: var(--bg-body);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+
+    .result-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .state-pill {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .state-active   { background: var(--green-bg); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.4); }
+    .state-tx-block { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.4); }
+    .state-blocked  { background: var(--red-bg); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.4); }
+    .state-deleted  { background: rgba(148, 163, 184, 0.18); color: #E2E8F0; border: 1px solid rgba(148, 163, 184, 0.45); }
+
+    .reason-text {
+      font-size: 15px;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+
+    .ref-input {
+      width: 100%;
+      background: var(--bg-row);
+      border: 1px solid var(--border-color);
+      color: #FFFFFF;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-top: 4px;
+      outline: none;
+    }
+
+    .ref-input:focus {
+      border-color: var(--orange);
+    }
+
+    .crm-box {
+      background: #0B0D10;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      color: #E2E8F0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-top: 8px;
+    }
+
+    .btn-copy {
+      width: 100%;
+      margin-top: 10px;
+      background: var(--orange);
+      border: none;
+      color: #FFFFFF;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-copy:hover {
+      background: var(--orange-hover);
+    }
+
+    /* TAB 3: SOP MATRIX TABLE */
+    .table-wrap {
+      overflow-x: auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 920px;
+    }
+
+    th {
+      background: var(--bg-row);
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      text-align: left;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+      font-size: 13px;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .row-num {
+      color: var(--orange);
+      font-weight: 800;
+      font-size: 14px;
+      width: 40px;
+    }
+
+    .sop-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+
+    .sop-sub {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .matrix-tag-badge {
+      display: inline-block;
+      background: var(--bg-row);
+      border: 1px solid var(--border-color);
+      color: #E2E8F0;
+      padding: 4px 9px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      margin: 2px 4px 2px 0;
+    }
+
+    .ref-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: var(--amber);
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    @media print {
+      body { background: #FFFFFF; color: #000000; padding: 0; }
+      .btn-export, .tabs-bar, .filter-bar, .sim-shortcut { display: none !important; }
+      .tab-panel { display: block !important; margin-bottom: 24px; }
+      .category-card.collapsed .category-body { display: flex !important; }
+      .kpi-card, .category-card, .panel-box, .table-wrap { border: 1px solid #CBD5E1; background: #FFFFFF; color: #000000; }
+      .kpi-value, .category-header h2, .tag-name, .sop-title, th, td { color: #000000 !important; }
+    }
+  </style>
 </head>
-<body class="min-h-screen flex flex-col bg-obsidian-base text-gray-200 antialiased selection:bg-toto-orange selection:text-white">
-
-    <!-- Toast Notification Box (Replaces alert) -->
-    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 ease-in-out bg-obsidian-card border border-toto-orange px-5 py-3.5 rounded-xl shadow-2xl flex items-center space-x-3 text-sm">
-        <i id="toast-icon" class="fa-solid fa-circle-check text-toto-orange text-lg"></i>
-        <span id="toast-message" class="font-medium text-white"></span>
-    </div>
-
-    <!-- MAIN HEADER -->
-    <header class="bg-obsidian-card border-b border-obsidian-border sticky top-0 z-40 shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                
-                <!-- Logo & Titles -->
-                <div class="flex items-start space-x-4">
-                    <div class="bg-toto-orange px-3 py-1.5 rounded-lg flex items-center space-x-2 shadow-md">
-                        <i class="fa-solid fa-shield-halved text-white text-lg"></i>
-                        <span class="font-extrabold tracking-wider text-white text-sm">TOTOGAMING <span class="opacity-80">|</span> RISK</span>
-                    </div>
-                    <div>
-                        <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Player Categorization & Tagging System</h1>
-                        <p class="text-xs sm:text-sm text-gray-400 mt-0.5">
-                            Հաճախորդների թեգավորման, սեգմենտավորման և ֆռոդի կանխարգելման միասնական 24/7 համակարգ
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Header Actions -->
-                <div class="flex items-center space-x-3 no-print">
-                    <button onclick="triggerPrint()" class="inline-flex items-center space-x-2 bg-obsidian-row hover:bg-obsidian-hover text-gray-200 hover:text-white border border-obsidian-border px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200">
-                        <i class="fa-solid fa-file-pdf text-toto-orange"></i>
-                        <span>Տպել / PDF</span>
-                    </button>
-                </div>
-            </div>
+<body>
+  <div class="container">
+    <!-- HEADER -->
+    <header class="header">
+      <div class="brand-group">
+        <div class="brand-badge">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>TOTOGAMING</span>
+          <span class="divider">|</span>
+          <span class="risk-txt">RISK</span>
         </div>
+        <div class="header-title">
+          <h1>Player Categorization &amp; Tagging System</h1>
+          <p>Հաճախորդների թեգավորման, սեգմենտավորման և ֆռոդի կանխարգելման միասնական 24/7 համակարգ</p>
+        </div>
+      </div>
+      <button class="btn-export" onclick="window.print()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 6 2 18 2 18 9"/>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+          <rect x="6" y="14" width="12" height="8"/>
+        </svg>
+        Տպել / Export PDF
+      </button>
     </header>
 
-    <!-- CONTAINER -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <!-- KPI CARDS -->
+    <section class="kpi-grid">
+      <div class="kpi-card" onclick="goToCategoriesCollapsed()" title="Սեղմեք՝ կատեգորիաների ցանկը տեսնելու համար">
+        <div class="kpi-info">
+          <div class="kpi-label">ԿԱՏԵԳՈՐԻԱՆԵՐ</div>
+          <div class="kpi-value">4 Կատեգորիա</div>
+          <div class="kpi-sub" style="color: var(--orange);">Հիմնական բաժիններ</div>
+        </div>
+        <div class="kpi-icon" style="color: var(--orange);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+            <polyline points="2 17 12 22 22 17"/>
+            <polyline points="2 12 12 17 22 12"/>
+          </svg>
+        </div>
+      </div>
 
-        <!-- 4 INTERACTIVE KPI CARDS -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
-            
-            <!-- KPI 1: 4 Categories -->
-            <div onclick="switchTab('tab1', {expandAll: false})" class="bg-obsidian-card border border-obsidian-border hover:border-toto-orange rounded-xl p-4 transition-all duration-200 cursor-pointer group hover:shadow-lg">
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Կատեգորիաներ</span>
-                    <div class="w-8 h-8 rounded-lg bg-orange-500/10 text-toto-orange flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <i class="fa-solid fa-folder-tree"></i>
-                    </div>
-                </div>
-                <div class="mt-2 flex items-baseline space-x-2">
-                    <span class="text-2xl font-extrabold text-white">4</span>
-                    <span class="text-sm font-medium text-gray-400">Կատեգորիա</span>
-                </div>
-                <p class="text-xs text-gray-500 mt-2 flex items-center group-hover:text-toto-orange transition-colors">
-                    <span>Բացել ըստ խմբերի</span>
-                    <i class="fa-solid fa-arrow-right ml-1 text-[10px]"></i>
-                </p>
-            </div>
+      <div class="kpi-card" onclick="goToTagsExpanded()" title="Սեղմեք՝ բոլոր 27 թեգերը բացելու համար">
+        <div class="kpi-info">
+          <div class="kpi-label">ՍՏԱՆԴԱՐՏ ԹԵԳԵՐ</div>
+          <div class="kpi-value">27 Թեգ</div>
+          <div class="kpi-sub" style="color: var(--amber);">Multi-Tag System</div>
+        </div>
+        <div class="kpi-icon" style="color: var(--amber);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+            <line x1="7" y1="7" x2="7.01" y2="7"/>
+          </svg>
+        </div>
+      </div>
 
-            <!-- KPI 2: 27 Tags -->
-            <div onclick="switchTab('tab1', {expandAll: true})" class="bg-obsidian-card border border-obsidian-border hover:border-toto-orange rounded-xl p-4 transition-all duration-200 cursor-pointer group hover:shadow-lg">
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Գործառնական Թեգեր</span>
-                    <div class="w-8 h-8 rounded-lg bg-orange-500/10 text-toto-orange flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <i class="fa-solid fa-tags"></i>
-                    </div>
-                </div>
-                <div class="mt-2 flex items-baseline space-x-2">
-                    <span class="text-2xl font-extrabold text-white">27</span>
-                    <span class="text-sm font-medium text-gray-400">Թեգ</span>
-                </div>
-                <p class="text-xs text-gray-500 mt-2 flex items-center group-hover:text-toto-orange transition-colors">
-                    <span>Ցուցադրել բոլոր թեգերը</span>
-                    <i class="fa-solid fa-arrow-right ml-1 text-[10px]"></i>
-                </p>
-            </div>
+      <div class="kpi-card" onclick="switchTab('simulator')" title="Անցնել Live Flow Սիմուլյատոր">
+        <div class="kpi-info">
+          <div class="kpi-label">ՖՌՈԴԻ ԸՆԴԳՐԿՈՒՄ</div>
+          <div class="kpi-value">100% Ծածկույթ</div>
+          <div class="kpi-sub" style="color: var(--purple);">Product + KYC + Network</div>
+        </div>
+        <div class="kpi-icon" style="color: var(--purple);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <polyline points="9 12 11 14 15 10"/>
+          </svg>
+        </div>
+      </div>
 
-            <!-- KPI 3: 100% Coverage -->
-            <div onclick="switchTab('tab2')" class="bg-obsidian-card border border-obsidian-border hover:border-toto-orange rounded-xl p-4 transition-all duration-200 cursor-pointer group hover:shadow-lg">
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Կանոնների Ծածկույթ</span>
-                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <i class="fa-solid fa-square-check"></i>
-                    </div>
-                </div>
-                <div class="mt-2 flex items-baseline space-x-2">
-                    <span class="text-2xl font-extrabold text-white">100%</span>
-                    <span class="text-sm font-medium text-emerald-400">Ծածկույթ</span>
-                </div>
-                <p class="text-xs text-gray-500 mt-2 flex items-center group-hover:text-toto-orange transition-colors">
-                    <span>Անցնել Սիմուլյատոր</span>
-                    <i class="fa-solid fa-arrow-right ml-1 text-[10px]"></i>
-                </p>
-            </div>
+      <div class="kpi-card" onclick="switchTab('matrix')" title="Անցնել SOP Matrix քարտեզ">
+        <div class="kpi-info">
+          <div class="kpi-label">ՍՏԱՆԴԱՐՏ SOP</div>
+          <div class="kpi-value">10 Սցենար</div>
+          <div class="kpi-sub" style="color: var(--green);">24/7 SOP Flow</div>
+        </div>
+        <div class="kpi-icon" style="color: var(--green);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/>
+            <path d="M10 6.5h4a2 2 0 0 1 2 2v5.5"/>
+          </svg>
+        </div>
+      </div>
+    </section>
 
-            <!-- KPI 4: 10 SOP Scenarios -->
-            <div onclick="switchTab('tab3')" class="bg-obsidian-card border border-obsidian-border hover:border-toto-orange rounded-xl p-4 transition-all duration-200 cursor-pointer group hover:shadow-lg">
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Գործառնական Սցենարներ</span>
-                    <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <i class="fa-solid fa-list-check"></i>
-                    </div>
-                </div>
-                <div class="mt-2 flex items-baseline space-x-2">
-                    <span class="text-2xl font-extrabold text-white">10</span>
-                    <span class="text-sm font-medium text-gray-400">Սցենար</span>
-                </div>
-                <p class="text-xs text-gray-500 mt-2 flex items-center group-hover:text-toto-orange transition-colors">
-                    <span>Տեսնել SOP Քարտեզը</span>
-                    <i class="fa-solid fa-arrow-right ml-1 text-[10px]"></i>
-                </p>
-            </div>
+    <!-- NAVIGATION TABS -->
+    <nav class="tabs-bar">
+      <button class="tab-btn active" id="tab-btn-taxonomy" onclick="switchTab('taxonomy')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <line x1="3" y1="9" x2="21" y2="9"/>
+          <line x1="9" y1="21" x2="9" y2="9"/>
+        </svg>
+        1. Taxonomy Explorer (Կատեգորիաներ և Թեգեր)
+      </button>
+      <button class="tab-btn" id="tab-btn-simulator" onclick="switchTab('simulator')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="4" y="4" width="16" height="16" rx="2"/>
+          <rect x="9" y="9" width="6" height="6"/>
+        </svg>
+        2. Live Flow Simulator (Սիմուլյատոր)
+      </button>
+      <button class="tab-btn" id="tab-btn-matrix" onclick="switchTab('matrix')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        3. SOP Matrix (Գործառնական Քարտեզ)
+      </button>
+    </nav>
+
+    <!-- TAB 1: TAXONOMY EXPLORER -->
+    <div class="tab-panel active" id="panel-taxonomy">
+      <div class="filter-bar">
+        <div class="search-box">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="taxonomySearch" placeholder="Փնտրել թեգ (օր. Live Casino, P2P, KYC, Photoshop)..." oninput="renderTaxonomy()" />
+        </div>
+        <div class="filter-controls">
+          <span class="filter-label">Ռիսկի մակարդակ՝</span>
+          <button class="pill-btn active" onclick="setRiskFilter('ALL', this)">Բոլորը</button>
+          <button class="pill-btn" onclick="setRiskFilter('Critical', this)" style="color: var(--red);">Critical</button>
+          <button class="pill-btn" onclick="setRiskFilter('High', this)" style="color: var(--orange);">High</button>
+          <button class="pill-btn" onclick="setRiskFilter('Medium', this)" style="color: var(--amber);">Medium</button>
+          <button class="pill-btn" onclick="setRiskFilter('Warning', this)" style="color: var(--purple);">Warning</button>
+          <button class="pill-btn" onclick="setRiskFilter('Tool/Process', this)" style="color: var(--green);">Tool/Process</button>
+          <div class="accordion-actions">
+            <button class="pill-btn" onclick="toggleAllCategories(false)">Բացել բոլորը</button>
+            <button class="pill-btn" onclick="toggleAllCategories(true)">Փակել բոլորը</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="taxonomyContainer"></div>
+    </div>
+
+    <!-- TAB 2: LIVE FLOW SIMULATOR -->
+    <div class="tab-panel" id="panel-simulator">
+      <div class="sim-layout">
+        <div class="panel-box">
+          <div class="panel-header">
+            <h3>Արագ Սցենարներ (Standard SOP Presets)</h3>
+            <button class="btn-reset" onclick="resetSimulator()">Մաքրել (Reset)</button>
+          </div>
+          <div class="presets-grid" id="presetsContainer"></div>
+
+          <div class="panel-header" style="margin-top: 10px;">
+            <h3>Ընտրեք թեգերը ըստ կատեգորիաների</h3>
+          </div>
+          <div id="simulatorTagsContainer"></div>
         </div>
 
-        <!-- NAVIGATION TABS BAR -->
-        <div class="bg-obsidian-card border border-obsidian-border rounded-xl p-1.5 flex flex-wrap gap-1 no-print">
-            <button id="nav-tab1" onclick="switchTab('tab1')" class="flex-1 min-w-[200px] py-3 px-4 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 bg-toto-orange text-white shadow-md">
-                <i class="fa-solid fa-sitemap"></i>
-                <span>1. Taxonomy Explorer (Կատեգորիաներ և Թեգեր)</span>
-            </button>
+        <div class="panel-box sticky-engine">
+          <div class="panel-header">
+            <h3>Decision Engine (Ավտոմատ Որոշում)</h3>
+          </div>
 
-            <button id="nav-tab2" onclick="switchTab('tab2')" class="flex-1 min-w-[200px] py-3 px-4 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 text-gray-400 hover:text-white hover:bg-obsidian-hover">
-                <i class="fa-solid fa-microchip"></i>
-                <span>2. Live Flow Simulator (Սիմուլյատոր)</span>
-            </button>
+          <div class="result-card">
+            <div class="result-label">Account State (Հաշվի Կարգավիճակ)</div>
+            <div id="engineState"></div>
+          </div>
 
-            <button id="nav-tab3" onclick="switchTab('tab3')" class="flex-1 min-w-[200px] py-3 px-4 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 text-gray-400 hover:text-white hover:bg-obsidian-hover">
-                <i class="fa-solid fa-table-list"></i>
-                <span>3. SOP Matrix (Գործառնական Քարտեզ)</span>
-            </button>
+          <div class="result-card">
+            <div class="result-label">System Reason (Համակարգային Պատճառ)</div>
+            <div class="reason-text" id="engineReason">—</div>
+          </div>
+
+          <div class="result-card">
+            <div class="result-label">Ընտրված Թեգեր (<span id="selectedCount">0</span>)</div>
+            <div class="chips-wrap" id="engineSelectedTags" style="margin-top: 6px;"></div>
+          </div>
+
+          <div class="result-card">
+            <div class="result-label">Reference / Ticket ID / Linked IDs</div>
+            <input type="text" class="ref-input" id="refInput" value="TG-258940" oninput="updateEngine()" placeholder="Օր. TG-258940 կամ Linked IDs..." />
+          </div>
+
+          <div class="result-card" style="margin-bottom: 0;">
+            <div class="result-label">Գեներացված CRM Նոթ (Standard Note)</div>
+            <div class="crm-box" id="crmOutput"></div>
+            <button class="btn-copy" id="copyBtn" onclick="copyCrmNote()">Պատճենել CRM Նոթը (Copy Note)</button>
+          </div>
         </div>
+      </div>
+    </div>
 
-        <!-- TAB 1: TAXONOMY EXPLORER -->
-        <section id="content-tab1" class="space-y-6">
-            
-            <!-- Controls Bar: Search & Filters -->
-            <div class="bg-obsidian-card border border-obsidian-border rounded-xl p-4 space-y-4">
-                <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
-                    
-                    <!-- Search Input -->
-                    <div class="relative w-full md:w-96">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-gray-400 text-sm"></i>
-                        <input type="text" id="taxonomy-search" oninput="filterTaxonomy()" placeholder="Որոնել թեգեր, կատեգորիաներ, նկարագրություններ..." class="w-full bg-obsidian-base border border-obsidian-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-toto-orange transition-colors">
-                    </div>
-
-                    <!-- Expand / Collapse Buttons -->
-                    <div class="flex items-center space-x-2 w-full md:w-auto justify-end">
-                        <button onclick="toggleAllAccordions(true)" class="px-3 py-2 bg-obsidian-row hover:bg-obsidian-hover text-gray-300 hover:text-white border border-obsidian-border rounded-lg text-xs font-medium transition-colors flex items-center space-x-1.5">
-                            <i class="fa-solid fa-angles-down"></i>
-                            <span>Բացել Բոլորը</span>
-                        </button>
-                        <button onclick="toggleAllAccordions(false)" class="px-3 py-2 bg-obsidian-row hover:bg-obsidian-hover text-gray-300 hover:text-white border border-obsidian-border rounded-lg text-xs font-medium transition-colors flex items-center space-x-1.5">
-                            <i class="fa-solid fa-angles-up"></i>
-                            <span>Փակել Բոլորը</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Risk Level Filter Pills -->
-                <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-obsidian-border/50">
-                    <span class="text-xs text-gray-400 font-semibold mr-1">Ռիսկի Մակարդակ:</span>
-                    <button onclick="setRiskFilter('ALL')" class="risk-pill active-pill border border-toto-orange bg-toto-orange/10 text-toto-orange text-xs px-3 py-1 rounded-full font-medium transition-all" data-risk="ALL">Բոլորը</button>
-                    <button onclick="setRiskFilter('Critical')" class="risk-pill border border-obsidian-border text-red-400 hover:bg-red-500/10 text-xs px-3 py-1 rounded-full font-medium transition-all" data-risk="Critical">Critical</button>
-                    <button onclick="setRiskFilter('High')" class="risk-pill border border-obsidian-border text-orange-400 hover:bg-orange-500/10 text-xs px-3 py-1 rounded-full font-medium transition-all" data-risk="High">High</button>
-                    <button onclick="setRiskFilter('Medium')" class="risk-pill border border-obsidian-border text-yellow-400 hover:bg-yellow-500/10 text-xs px-3 py-1 rounded-full font-medium transition-all" data-risk="Medium">Medium</button>
-                    <button onclick="setRiskFilter('Warning')" class="risk-pill border border-obsidian-border text-blue-400 hover:bg-blue-500/10 text-xs px-3 py-1 rounded-full font-medium transition-all" data-risk="Warning">Warning</button>
-                    <button onclick="setRiskFilter('Tool/Process')" class="risk-pill border border-obsidian-border text-slate-400 hover:bg-slate-500/10 text-xs px-3 py-1 rounded-full font-medium transition-all" data-risk="Tool/Process">Tool/Process</button>
-                </div>
-            </div>
-
-            <!-- Categories Accordions Container -->
-            <div id="taxonomy-container" class="space-y-4">
-                <!-- Dynamically Rendered Accordions -->
-            </div>
-        </section>
-
-        <!-- TAB 2: LIVE FLOW SIMULATOR -->
-        <section id="content-tab2" class="hidden space-y-6">
-            
-            <!-- 10 SOP PRESETS SELECTOR -->
-            <div class="bg-obsidian-card border border-obsidian-border rounded-xl p-5">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center space-x-2">
-                        <i class="fa-solid fa-wand-magic-sparkles text-toto-orange text-lg"></i>
-                        <h2 class="text-base font-bold text-white uppercase tracking-wider">10 Ստանդարտ SOP Սցենարներ (Presets)</h2>
-                    </div>
-                    <span class="text-xs text-gray-400">Ընտրեք պատրաստի սցենար արագ թեստավորման համար</span>
-                </div>
-
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5" id="presets-grid">
-                    <!-- Dynamic Preset Buttons -->
-                </div>
-            </div>
-
-            <!-- SIMULATOR WORKSPACE: CHIPS SELECTOR + STICKY DECISION ENGINE -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                
-                <!-- Left Column: Tag Chips Selector (7 cols) -->
-                <div class="lg:col-span-7 space-y-5">
-                    <div class="bg-obsidian-card border border-obsidian-border rounded-xl p-5">
-                        <div class="flex items-center justify-between mb-4 border-b border-obsidian-border pb-3">
-                            <div>
-                                <h3 class="text-base font-bold text-white">Ակտիվ Թեգերի Ընտրություն</h3>
-                                <p class="text-xs text-gray-400">Սեղմեք թեգերին՝ դրանք ավելացնելու կամ հեռացնելու համար</p>
-                            </div>
-                            <button onclick="resetSimulator()" class="px-3 py-1.5 bg-obsidian-row hover:bg-red-500/10 text-gray-400 hover:text-red-400 border border-obsidian-border rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1">
-                                <i class="fa-solid fa-rotate-left"></i>
-                                <span>Մաքրել</span>
-                            </button>
-                        </div>
-
-                        <!-- Chip Categories -->
-                        <div id="simulator-chips-container" class="space-y-5">
-                            <!-- Dynamic Chip Groups -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right Column: Sticky Decision Engine Panel (5 cols) -->
-                <div class="lg:col-span-5">
-                    <div class="bg-obsidian-card border border-obsidian-border rounded-xl p-6 sticky top-24 space-y-6 shadow-2xl">
-                        
-                        <div class="flex items-center justify-between border-b border-obsidian-border pb-4">
-                            <div class="flex items-center space-x-2">
-                                <div class="w-3 h-3 rounded-full bg-toto-orange animate-pulse"></div>
-                                <h3 class="text-base font-extrabold text-white tracking-wide uppercase">Decision Engine Output</h3>
-                            </div>
-                            <span class="text-[11px] font-mono bg-obsidian-row px-2 py-1 rounded text-gray-400 border border-obsidian-border">REAL-TIME</span>
-                        </div>
-
-                        <!-- Result 1: Account State -->
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Աքաունթի Կարգավիճակ (Account State)</label>
-                            <div id="sim-account-state" class="p-4 rounded-xl font-extrabold text-lg flex items-center justify-between status-badge-active transition-all">
-                                <span>Active (Ակտիվ)</span>
-                                <i id="sim-state-icon" class="fa-solid fa-circle-check"></i>
-                            </div>
-                        </div>
-
-                        <!-- Result 2: System Reason -->
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Համակարգային Պատճառ (System Reason)</label>
-                            <div id="sim-system-reason" class="p-3.5 bg-obsidian-base border border-obsidian-border rounded-xl font-mono text-sm text-gray-200">
-                                —
-                            </div>
-                        </div>
-
-                        <!-- Result 3: Selected Tags -->
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Ընտրված Թեգեր</label>
-                            <div id="sim-selected-tags-badge" class="min-h-[42px] p-3 bg-obsidian-base border border-obsidian-border rounded-xl flex flex-wrap gap-1.5 items-center">
-                                <span class="text-xs text-gray-500 italic">Թեգեր ընտրված չեն</span>
-                            </div>
-                        </div>
-
-                        <!-- Case ID Input -->
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Case / Reference ID (Օպցիոնալ)</label>
-                            <input type="text" id="sim-reference-input" oninput="updateDecisionEngine()" placeholder="Օրինակ՝ CASE-89241" value="CASE-89241" class="w-full bg-obsidian-base border border-obsidian-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-toto-orange font-mono">
-                        </div>
-
-                        <!-- Copyable CRM Note Output -->
-                        <div class="space-y-2 pt-2 border-t border-obsidian-border">
-                            <div class="flex items-center justify-between">
-                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">CRM Note Output</label>
-                                <button onclick="copyCrmNote()" class="text-xs bg-toto-orange hover:bg-toto-orangeDark text-white px-3 py-1.5 rounded-lg font-bold transition-all flex items-center space-x-1 shadow-md">
-                                    <i class="fa-regular fa-copy"></i>
-                                    <span>Պատճենել CRM Note</span>
-                                </button>
-                            </div>
-                            <textarea id="sim-crm-note" readonly rows="4" class="w-full bg-obsidian-base border border-obsidian-border rounded-xl p-3 font-mono text-xs text-gray-300 focus:outline-none resize-none selection:bg-toto-orange selection:text-white"></textarea>
-                        </div>
-
-                    </div>
-                </div>
-
-            </div>
-
-        </section>
-
-        <!-- TAB 3: SOP MATRIX TABLE -->
-        <section id="content-tab3" class="hidden space-y-6">
-            <div class="bg-obsidian-card border border-obsidian-border rounded-xl p-5 space-y-4">
-                
-                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                    <div>
-                        <h2 class="text-lg font-bold text-white">Գործառնական Քարտեզ (Standard Operating Procedure Matrix)</h2>
-                        <p class="text-xs text-gray-400">10 հիմնական ռիսկային սցենարների ավտոմատ որոշումների և SOP գործողությունների աղյուսակ</p>
-                    </div>
-
-                    <div class="relative w-full sm:w-72">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-400 text-xs"></i>
-                        <input type="text" id="sop-search" oninput="filterSopMatrix()" placeholder="Որոնել SOP աղյուսակում..." class="w-full bg-obsidian-base border border-obsidian-border rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-toto-orange">
-                    </div>
-                </div>
-
-                <!-- Table -->
-                <div class="overflow-x-auto rounded-xl border border-obsidian-border">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-obsidian-row border-b border-obsidian-border text-[11px] font-bold uppercase text-gray-400 tracking-wider">
-                                <th class="p-3.5 text-center w-12">#</th>
-                                <th class="p-3.5">Սցենար</th>
-                                <th class="p-3.5">Կիրառվող Թեգեր</th>
-                                <th class="p-3.5">Աքաունթի Կարգավիճակ</th>
-                                <th class="p-3.5">Համակարգային Պատճառ</th>
-                                <th class="p-3.5">Պահանջվող Risk / Operations SOP</th>
-                                <th class="p-3.5 text-center">Գործողություն</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sop-matrix-body" class="divide-y divide-obsidian-border text-xs">
-                            <!-- Dynamically Generated SOP Rows -->
-                        </tbody>
-                    </table>
-                </div>
-
-            </div>
-        </section>
-
-    </main>
-
-    <!-- FOOTER -->
-    <footer class="bg-obsidian-card border-t border-obsidian-border py-6 mt-12 no-print">
-        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-gray-500 space-y-2">
-            <div class="flex items-center justify-center space-x-2">
-                <span class="w-2 h-2 rounded-full bg-toto-orange"></span>
-                <span class="font-bold text-gray-400">TOTOGAMING RISK MANAGEMENT SYSTEM</span>
-            </div>
-            <p>© 2026 TotoGaming Department of Risk & Anti-Fraud. All Rights Reserved.</p>
+    <!-- TAB 3: SOP MATRIX -->
+    <div class="tab-panel" id="panel-matrix">
+      <div class="filter-bar">
+        <div class="search-box">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="matrixSearch" placeholder="Փնտրել սցենար, թեգ կամ կարգավիճակ..." oninput="renderMatrix()" />
         </div>
-    </footer>
+      </div>
 
-    <!-- JAVASCRIPT LOGIC -->
-    <script>
-        // DATA STRUCTURES: 4 Categories & 27 Clean Tags (NO CAT-01 or C01 code prefixes)
-        const categories = [
-            {
-                id: 'cat1',
-                name: '1. Verification & Identity Issues (Իդենտիֆիկացիայի և Վերիֆիկացիայի Խնդիրներ)',
-                badge: 'ԿԱՏԵԳՈՐԻԱ 01',
-                color: 'border-amber-500/40 text-amber-400',
-                tags: [
-                    { name: 'KYC Verification', risk: 'High', desc: 'Ստանդարտ KYC վերիֆիկացիոն փաստաթղթերի ստուգման ընթացք կամ պահանջ:' },
-                    { name: 'KYCAID Static Link', risk: 'Medium', desc: 'KYCAID ավտոմատացված համակարգի ստատիկ հղման ուղարկում հաճախորդին:' },
-                    { name: 'Verification via Call', risk: 'Medium', desc: 'Տեսազանգով կամ հեռախոսազանգով ինքնության հաստատման պահանջ:' },
-                    { name: 'Selfie with Current Date', risk: 'High', desc: 'Լրացուցիչ լուսանկար՝ անձնագրով և ընթացիկ ամսաթվով թղթով:' },
-                    { name: 'Additional Verification Requested', risk: 'High', desc: 'Լրացուցիչ բանկային, հասցեի կամ աղբյուրի փաստաթղթերի հարցում:' },
-                    { name: 'Phone Number Not Owned', risk: 'Warning', desc: 'Հեռախոսահամարը գրանցված է այլ անձի անունով (պահանջվում է թարմացում):' },
-                    { name: 'Potential VIP client without KYCaid verification', risk: 'Tool/Process', desc: 'Պոտենցիալ VIP հաճախորդ՝ առանց KYCAID ավտոմատ ստուգման:' }
-                ]
-            },
-            {
-                id: 'cat2',
-                name: '2. Fraud & Account Integrity (Ֆռոդ և Աքաունթի Անվտանգություն)',
-                badge: 'ԿԱՏԵԳՈՐԻԱ 02',
-                color: 'border-red-500/40 text-red-400',
-                tags: [
-                    { name: 'Data Inconsistency', risk: 'High', desc: 'Անձնական տվյալների անհամապատասխանություն համակարգում և փաստաթղթերում:' },
-                    { name: 'Account Used by Another Person', risk: 'High', desc: 'Աքաունթի փոխանցում կամ օգտագործում երրորդ անձանց կողմից:' },
-                    { name: 'Edited Document (Photoshop)', risk: 'Critical', desc: 'Խմբագրված, կեղծված կամ ֆոտոշոփված փաստաթղթի հայտնաբերում:' },
-                    { name: 'AI / Deepfake Document', risk: 'Critical', desc: 'Արհեստական բանականությամբ կամ Deepfake տեխնոլոգիայով գեներացված ֆայլ:' },
-                    { name: 'Bonus Fraud', risk: 'Critical', desc: 'Բոնուսների չարաշահում, չիտինգ կամ ապօրինի սքեմաների կիրառում:' },
-                    { name: 'Fake User / Duplicate CNP', risk: 'Critical', desc: 'Կեղծ անձնավորություն կամ կրկնվող ՀԾՀ (Հանրային Ծառայությունների Համարանիշ):' },
-                    { name: 'Blacklisted / Do Not Reopen', risk: 'Critical', desc: 'Սև ցուցակում ներառված հաճախորդ (չվերաբացվող աքաունթ):' }
-                ]
-            },
-            {
-                id: 'cat3',
-                name: '3. Gambling Policy & Compliance (Խաղային Քաղաքականություն և Compliance)',
-                badge: 'ԿԱՏԵԳՈՐԻԱ 03',
-                color: 'border-purple-500/40 text-purple-400',
-                tags: [
-                    { name: 'Underage (<18) / Minor Involved', risk: 'Critical', desc: 'Անչափահաս անձի (մինչև 18/21 տարեկան) խաղադրույքներ կամ մասնակցություն:' },
-                    { name: 'Live / Fast Games Anomaly', risk: 'High', desc: 'Live/Fast խաղերում կասկածելի խաղադրույքների օրինաչափություն կամ anomaly:' },
-                    { name: 'AML Suspicion / Pattern', risk: 'Critical', desc: 'Փողերի լվացման կասկածելի գործարքներ (Anti-Money Laundering):' },
-                    { name: 'Multi-Accounting Suspicion', risk: 'High', desc: 'Մեկից ավելի աքաունթների օգտագործման կասկած (Multi-account):' },
-                    { name: 'Chargeback Fraud / Disputed Deposit', risk: 'Critical', desc: 'Բանկային քարտի վիճարկված դեպոզիտ կամ չարջբեք:' },
-                    { name: 'Self-Exclusion Request', risk: 'Warning', desc: 'Խաղացողի կողմից ինքնաբացարկի կամ խաղադրույքների սահմանափակման դիմում:' },
-                    { name: 'High-Risk Region / Geo Fraud', risk: 'Medium', desc: 'Արգելված կամ բարձր ռիսկային աշխարհագրական IP/VPN օգտագործում:' }
-                ]
-            },
-            {
-                id: 'cat4',
-                name: '4. Operations, Technical & Support (Գործառնական, Տեխնիկական և Սպասարկում)',
-                badge: 'ԿԱՏԵԳՈՐԻԱ 04',
-                color: 'border-blue-500/40 text-blue-400',
-                tags: [
-                    { name: 'Tech Issue / Compensation', risk: 'Tool/Process', desc: 'Տեխնիկական ծրագրային խափանում կամ փոխհատուցման գործընթաց:' },
-                    { name: 'Pending Document Review', risk: 'Tool/Process', desc: 'Փաստաթղթերը գտնվում են ռիսկի թիմի վերանայման փուլում:' },
-                    { name: 'Payment Gateway Error', risk: 'Tool/Process', desc: 'Վճարային համակարգի պրովայդերի կողմից գրանցված սխալ:' },
-                    { name: 'Manual Limit Adjustment', risk: 'Tool/Process', desc: 'Խաղադրույքների կամ ելքագրման սահմանաչափերի ձեռքով փոփոխություն:' },
-                    { name: 'VIP Special Treatment', risk: 'Tool/Process', desc: 'VIP հաճախորդի հատուկ սպասարկման և մոնիտորինգի ռեժիմ:' },
-                    { name: 'Risk Monitoring Watchlist', risk: 'Warning', desc: 'Հաճախորդը գտնվում է ռիսկի բաժնի հատուկ դիտարկման ցուցակում:' }
-                ]
-            }
-        ];
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Սցենար (Case Scenario)</th>
+              <th>Account State</th>
+              <th>System Reason</th>
+              <th>Պարտադիր Թեգեր (Multi-Tag Combination)</th>
+              <th>Reference Ֆորմատ</th>
+            </tr>
+          </thead>
+          <tbody id="matrixBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-        // 10 SOP PRESETS (STRICTLY matching logic specifications)
-        const sopPresets = [
-            { id: 1, title: '1. Phone Number Not Owned', tags: ['Phone Number Not Owned'], desc: 'Հեռախոսահամարը այլ անձի անունով է' },
-            { id: 2, title: '2. VIP without KYCaid', tags: ['Potential VIP client without KYCaid verification'], desc: 'VIP հաճախորդ առանց ավտոմատ KYCaid' },
-            { id: 3, title: '3. Tech Issue / Compensation', tags: ['Tech Issue / Compensation'], desc: 'Տեխնիկական խափանում կամ փոխհատուցում' },
-            { id: 4, title: '4. Fast Games Anomaly', tags: ['Live / Fast Games Anomaly'], desc: 'Կասկածելի խաղային ակտիվություն' },
-            { id: 5, title: '5. Verification Call / Selfie', tags: ['Verification via Call', 'Selfie with Current Date'], desc: 'Զանգով վերիֆիկացիա և Սելֆի' },
-            { id: 6, title: '6. Inconsistency / Photoshop', tags: ['Data Inconsistency', 'Edited Document (Photoshop)'], desc: 'Տվյալների անհամապատասխանություն և Ֆոտոշոփ' },
-            { id: 7, title: '7. Bonus Fraud', tags: ['Bonus Fraud'], desc: 'Բոնուսային ֆռոդ և չարաշահում' },
-            { id: 8, title: '8. Blacklisted Alone', tags: ['Blacklisted / Do Not Reopen'], desc: 'Սև ցուցակ (առանձին)' },
-            { id: 9, title: '9. Underage Gambling', tags: ['Underage (<18) / Minor Involved'], desc: 'Անչափահաս խաղացող' },
-            { id: 10, title: '10. Fake User / Duplicate CNP', tags: ['Fake User / Duplicate CNP'], desc: 'Կեղծ օգտատեր կամ կրկնվող ՀԾՀ' }
-        ];
+  <script>
+    const CATEGORIES = [
+      {
+        id: "cat-1",
+        name: "CASINO PRODUCT & GAME FRAUD",
+        subtitle: "Խաղային ուղղվածություն, ֆռոդ և խաղային սահմանափակումներ",
+        theme: "",
+        tags: [
+          { name: "Live Casino Risk", desc: "Կասկածելի խաղադրույքներ կամ ստրատեգիաներ Live խաղերում (Roulette, Blackjack, Baccarat)", trigger: "Անոմալ խաղային վարքագիծ Live սեղաններին", risk: "High" },
+          { name: "Fast Games / Crash Risk", desc: "Անոմալ վարքագիծ և չարաշահում Fast / Crash խաղերում (Aviator, Mines և այլն)", trigger: "Կասկածելի խաղադրույքներ կամ ավտոմատացված ստրատեգիաներ", risk: "High" },
+          { name: "Slots / RTP Abuse", desc: "Սլոթերի մեխանիկայի կամ բոնուսային փուլերի կուտակման չարաշահում", trigger: "Բոնուսային ռաունդների կուտակում և չարաշահում", risk: "Medium" },
+          { name: "P2P Collusion", desc: "Խաղացողների միջև միտումնավոր պարտություններ և միջոցների փոխանցում P2P խաղերում", trigger: "Նարդի, Բլոտ, Պոկեր և այլ P2P խաղերում համաձայնեցված խաղ", risk: "Critical" },
+          { name: "Bonus Fraud", desc: "Բոնուսների չարաշահում (ներառյալ P2P-ի միջոցով բոնուսի լվացում և bonus hunting)", trigger: "Բոնուսային պայմանների միտումնավոր շրջանցում (ավտոմատ Blocked)", risk: "Critical" },
+          { name: "Game Bug / Exploit", desc: "Խաղային պրովայդերի տեխնիկական սխալի (bug) միտումնավոր օգտագործում շահույթի համար", trigger: "Տեխնիկական խոցելիության շահագործում", risk: "Critical" },
+          { name: "Opposite Betting", desc: "Հակառակ խաղադրույքներ (օր.՝ Կարմիր/Սև) շրջանառություն ապահովելու նպատակով", trigger: "Առանց իրական ռիսկի խաղադրույքներ (Turnover abuse)", risk: "High" },
+          { name: "Warning Issued", desc: "Տրվել է պաշտոնական խաղային նախազգուշացում (օր.՝ առաջին P2P դեպքի ժամանակ)", trigger: "Առաջին հայտնաբերված խաղային խախտում՝ առանց արգելափակման", risk: "Warning" },
+          { name: "Provider Blocked", desc: "Սահմանափակվել է միայն կոնկրետ խաղային պրովայդերի (օր.՝ P2P կամ Skill games) հասանելիությունը", trigger: "Մասնակի սահմանափակում՝ միայն կոնկրետ խաղի/պրովայդերի մասով", risk: "Warning" },
+          { name: "Blacklisted / Do Not Reopen", desc: "Սև ցուցակում ներառված հաճախորդ (մոնիթորինգի տակ՝ Active, եթե չկա ծանր ֆռոդ)", trigger: "Ներքին սև ցուցակ / կրկնակի վերաբացման արգելք", risk: "High" },
+          { name: "Under Investigation", desc: "Հաշիվը գտնվում է խաղային ռիսկերի ընթացիկ ուսումնասիրության փուլում", trigger: "Ակտիվ խաղային վերլուծություն՝ մինչև վերջնական որոշում", risk: "Tool/Process" },
+          { name: "Tech Issue / Compensation", desc: "Տեխնիկական խնդիր խաղային ռաունդում կամ փոխհատուցման հաշվարկ (հաշիվը մնում է Active)", trigger: "Պրովայդերի/համակարգի տեխնիկական խնդիր (INC / Round ID)", risk: "Tool/Process" }
+        ]
+      },
+      {
+        id: "cat-2",
+        name: "KYC & IDENTITY VIOLATION",
+        subtitle: "Ինքնության և փաստաթղթերի խախտումներ (ներառյալ անչափահասների դեպքերը)",
+        theme: "cat-crimson",
+        tags: [
+          { name: "Account Used by Another Person", desc: "Հաշվից փաստացի օգտվում է երրորդ անձ (3rd party usage)", trigger: "Զանգով կամ տեխնիկական տվյալներով հաստատված այլ անձի օգտագործում", risk: "Critical" },
+          { name: "Edited Document (Photoshop)", desc: "Գրաֆիկական խմբագրիչով կեղծված փաստաթուղթ", trigger: "Փաստաթղթի վրա տվյալների կամ նկարի փոփոխություն", risk: "Critical" },
+          { name: "AI / Deepfake Document", desc: "Արհեստական բանականությամբ գեներացված փաստաթուղթ կամ Deepfake սելֆի", trigger: "AI գեներացված ID կամ կեղծված տեսանյութ/սելֆի", risk: "Critical" },
+          { name: "Data Inconsistency", desc: "Անձնական տվյալների անհամապատասխանություն կամ դուպլիկատ հաշվում կեղծ տվյալներ", trigger: "Անուն/ազգանուն, ծննդյան թիվ կամ փաստաթղթի տվյալների տարբերություն", risk: "High" },
+          { name: "Fake User / Duplicate CNP", desc: "Գրանցում կեղծ տվյալներով կամ արդեն օգտագործվող CNP-ով", trigger: "Նույն անձնական համարով (CNP) կրկնակի գրանցման փորձ (Deleted)", risk: "Critical" },
+          { name: "Phone Number Not Owned", desc: "Գրանցված հեռախոսահամարը չի պատկանում հաճախորդին (հաշիվը մնում է Active)", trigger: "Հեռախոսահամարի պատկանելության չհաստատում", risk: "Medium" },
+          { name: "Underage (<18) / Minor Involved", desc: "18-ը չլրացած անձի գրանցում կամ անչափահասի քարտի/փաստաթղթի ներգրավում", trigger: "Անչափահասի մասնակցություն (Պարտադիր Blocked, ոչ Deleted)", risk: "Critical" }
+        ]
+      },
+      {
+        id: "cat-3",
+        name: "MULTI-ACCOUNT & NETWORK",
+        subtitle: "Կրկնակի հաշիվներ և կապակցված խմբեր",
+        theme: "cat-purple",
+        tags: [
+          { name: "Duplicate Account", desc: "Նույն անձի կողմից բացված կրկնակի հաշիվ", trigger: "Մեկ անձի անունով երկրորդ կամ ավելի հաշիվների առկայություն", risk: "High" },
+          { name: "Shared Device", desc: "Միևնույն սարքից (Device) մուտք գործած տարբեր հաշիվներ", trigger: "Նույն Device ID / Fingerprint համընկնում տարբեր հաշիվներում", risk: "Medium" },
+          { name: "Syndicate / Linked Group", desc: "Համակարգված գործող կապակցված հաշիվների խումբ (Active մոնիթորինգի տակ)", trigger: "Խմբային սխեմաներ (P2P, բոնուս հանթինգ և այլն)", risk: "High" }
+        ]
+      },
+      {
+        id: "cat-4",
+        name: "VERIFICATION FLOW & ACCOUNT STATUS",
+        subtitle: "Ստուգման գործընթաց, գործիքներ և հատուկ կարգավիճակներ",
+        theme: "cat-emerald",
+        tags: [
+          { name: "Additional Verification Requested", desc: "Պահանջվել է լրացուցիչ ստուգում (սպասում ենք հաճախորդին)", trigger: "Ուղարկվել է հարցում՝ լրացուցիչ տվյալների կամ սելֆիի համար", risk: "Tool/Process" },
+          { name: "KYCAID Static Link", desc: "Ստուգումն ուղարկվել կամ անցկացվել է KYCAID ստատիկ հղումով", trigger: "Վերիֆիկացիա KYCAID հարթակի միջոցով", risk: "Tool/Process" },
+          { name: "Verification via Call", desc: "Հաճախորդի ինքնությունը ճշտվում է զանգով / տեսազանգով", trigger: "Հեռախոսային կամ վիդեո նույնականացման նշանակում/անցկացում", risk: "Tool/Process" },
+          { name: "Selfie with Current Date", desc: "Պահանջվել է սելֆի տվյալ օրվա ամսաթվով", trigger: "Ոչ ակտիվ/նոր դեպոզիտ հաշիվների կամ կասկածելի դեպքերի ստուգում", risk: "Tool/Process" },
+          { name: "Potential VIP client without KYCaid verification", desc: "Պոտենցիալ VIP հաճախորդ՝ առանց KYCAID ստանդարտ ստուգման (մնում է Active)", trigger: "Բարձր շրջանառությամբ VIP հաճախորդի սպասարկում առանց սահմանափակման", risk: "Tool/Process" }
+        ]
+      }
+    ];
 
-        // APP STATE
-        let activeTab = 'tab1';
-        let activeRiskFilter = 'ALL';
-        let activeSimulatorTags = new Set(['Phone Number Not Owned']);
-        let activePresetId = 1;
-        let accordionStates = { cat1: true, cat2: true, cat3: true, cat4: true };
+    const SOP_SCENARIOS = [
+      {
+        title: "KYC Verification",
+        sub: "Ստանդարտ վերիֆիկացիայի հարցում KYCAID հարթակով",
+        state: "Blocked For Transactions",
+        reason: "Identity Verification Issue",
+        tags: ["KYCAID Static Link", "Additional Verification Requested"],
+        ref: "TG-258940"
+      },
+      {
+        title: "Live / Fast Games Anomaly",
+        sub: "Անոմալ վարքագիծ Live Casino կամ Fast/Crash խաղերում",
+        state: "Active",
+        reason: "—",
+        tags: ["Live Casino Risk", "Fast Games / Crash Risk", "Under Investigation"],
+        ref: "TG-304912"
+      },
+      {
+        title: "3rd Party Account Usage",
+        sub: "Հաստատված այլ անձի կողմից հաշվի օգտագործում",
+        state: "Blocked",
+        reason: "Identity Verification Issue",
+        tags: ["Account Used by Another Person", "Verification via Call", "Blacklisted / Do Not Reopen"],
+        ref: "TG-281104"
+      },
+      {
+        title: "Photoshop / AI Document Fraud",
+        sub: "Կեղծված կամ AI գեներացված փաստաթղթի ներկայացում",
+        state: "Blocked",
+        reason: "Identity Verification Issue",
+        tags: ["Edited Document (Photoshop)", "AI / Deepfake Document", "Blacklisted / Do Not Reopen"],
+        ref: "Linked IDs: 546948, 546923"
+      },
+      {
+        title: "P2P Collusion (1st Warning)",
+        sub: "P2P միտումնավոր պարտություն (առաջին նախազգուշացում)",
+        state: "Active",
+        reason: "—",
+        tags: ["P2P Collusion", "Syndicate / Linked Group", "Warning Issued"],
+        ref: "Partner IDs: 243871, 244421"
+      },
+      {
+        title: "Bonus Fraud (Confirmed Abuse)",
+        sub: "Բոնուսային պայմանների չարաշահում կամ լվացում",
+        state: "Blocked",
+        reason: "Fraud or Suspicious Activity",
+        tags: ["Bonus Fraud", "Blacklisted / Do Not Reopen"],
+        ref: "Linked IDs: 375414, 615589"
+      },
+      {
+        title: "Underage Gambling (<18)",
+        sub: "Անչափահասի գրանցում կամ անչափահասի քարտի օգտագործում",
+        state: "Blocked",
+        reason: "Underage Gambling",
+        tags: ["Underage (<18) / Minor Involved", "Blacklisted / Do Not Reopen"],
+        ref: "TG-290411"
+      },
+      {
+        title: "Fake User / Duplicate CNP",
+        sub: "Արդեն օգտագործվող CNP-ով կեղծ գրանցման հայտ",
+        state: "Deleted",
+        reason: "Violation of terms and conditions",
+        tags: ["Fake User / Duplicate CNP", "Duplicate Account"],
+        ref: "Existing CNP ID: 412098"
+      },
+      {
+        title: "Technical Disconnect / Compensation",
+        sub: "Պրովայդերի տեխնիկական խնդիր կամ փոխհատուցման հաշվարկ",
+        state: "Active",
+        reason: "—",
+        tags: ["Tech Issue / Compensation"],
+        ref: "INC-88910"
+      },
+      {
+        title: "Potential VIP Client (No KYCAID)",
+        sub: "Պոտենցիալ VIP հաճախորդ՝ առանց KYCAID ստուգման",
+        state: "Active",
+        reason: "—",
+        tags: ["Potential VIP client without KYCaid verification"],
+        ref: "VIP-TG-7741"
+      }
+    ];
 
-        // INITIALIZATION
-        window.onload = function() {
-            renderTaxonomy();
-            renderSimulatorChips();
-            renderPresetsGrid();
-            renderSopMatrix();
-            updateDecisionEngine();
-        };
+    let activeRiskFilter = "ALL";
+    let collapsedCats = {};
+    let selectedTags = new Set(["KYCAID Static Link", "Additional Verification Requested"]);
+    let activePresetIdx = 0;
 
-        // NAVIGATION TABS SWITCHER
-        function switchTab(tabId, options = {}) {
-            activeTab = tabId;
-            ['tab1', 'tab2', 'tab3'].forEach(t => {
-                const navBtn = document.getElementById(`nav-${t}`);
-                const contentSec = document.getElementById(`content-${t}`);
-                if (t === tabId) {
-                    navBtn.className = "flex-1 min-w-[200px] py-3 px-4 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 bg-toto-orange text-white shadow-md";
-                    contentSec.classList.remove('hidden');
-                } else {
-                    navBtn.className = "flex-1 min-w-[200px] py-3 px-4 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 text-gray-400 hover:text-white hover:bg-obsidian-hover";
-                    contentSec.classList.add('hidden');
-                }
-            });
+    function switchTab(tabName) {
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.remove("active"));
+      document.getElementById("tab-btn-" + tabName).classList.add("active");
+      document.getElementById("panel-" + tabName).classList.add("active");
+    }
 
-            if (options.expandAll !== undefined) {
-                toggleAllAccordions(options.expandAll);
-            }
+    function goToCategoriesCollapsed() {
+      switchTab("taxonomy");
+      toggleAllCategories(true);
+    }
 
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+    function goToTagsExpanded() {
+      switchTab("taxonomy");
+      toggleAllCategories(false);
+    }
+
+    function toggleAllCategories(collapse) {
+      CATEGORIES.forEach(c => {
+        collapsedCats[c.id] = collapse;
+      });
+      renderTaxonomy();
+    }
+
+    function toggleSingleCategory(catId) {
+      collapsedCats[catId] = !collapsedCats[catId];
+      renderTaxonomy();
+    }
+
+    function setRiskFilter(risk, btnEl) {
+      activeRiskFilter = risk;
+      document.querySelectorAll(".filter-controls .pill-btn").forEach(b => {
+        if (!b.parentElement.classList.contains("accordion-actions")) {
+          b.classList.remove("active");
         }
+      });
+      btnEl.classList.add("active");
+      renderTaxonomy();
+    }
 
-        // RISK PILL BADGE HELPER
-        function getRiskBadge(risk) {
-            switch(risk) {
-                case 'Critical':
-                    return `<span class="bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">Critical</span>`;
-                case 'High':
-                    return `<span class="bg-orange-500/15 text-orange-400 border border-orange-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">High</span>`;
-                case 'Medium':
-                    return `<span class="bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">Medium</span>`;
-                case 'Warning':
-                    return `<span class="bg-blue-500/15 text-blue-400 border border-blue-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">Warning</span>`;
-                default:
-                    return `<span class="bg-slate-500/15 text-slate-400 border border-slate-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">Tool/Process</span>`;
-            }
-        }
+    function getRiskBadgeClass(risk) {
+      if (risk === "Critical") return "risk-critical";
+      if (risk === "High") return "risk-high";
+      if (risk === "Medium") return "risk-medium";
+      if (risk === "Warning") return "risk-warning";
+      return "risk-process";
+    }
 
-        // RENDER TAB 1: TAXONOMY EXPLORER
-        function renderTaxonomy() {
-            const container = document.getElementById('taxonomy-container');
-            const searchVal = document.getElementById('taxonomy-search').value.toLowerCase().trim();
+    function renderTaxonomy() {
+      const q = document.getElementById("taxonomySearch").value.trim().toLowerCase();
+      const container = document.getElementById("taxonomyContainer");
+      container.innerHTML = "";
 
-            let html = '';
+      CATEGORIES.forEach(cat => {
+        const filteredTags = cat.tags.filter(t => {
+          const matchesRisk = activeRiskFilter === "ALL" || t.risk === activeRiskFilter;
+          const matchesQuery = !q ||
+            t.name.toLowerCase().includes(q) ||
+            t.desc.toLowerCase().includes(q) ||
+            t.trigger.toLowerCase().includes(q) ||
+            cat.name.toLowerCase().includes(q);
+          return matchesRisk && matchesQuery;
+        });
 
-            categories.forEach(cat => {
-                // Filter tags based on search and risk filter
-                const filteredTags = cat.tags.filter(tag => {
-                    const matchesSearch = tag.name.toLowerCase().includes(searchVal) || 
-                                          tag.desc.toLowerCase().includes(searchVal) ||
-                                          cat.name.toLowerCase().includes(searchVal);
-                    const matchesRisk = (activeRiskFilter === 'ALL') || (tag.risk === activeRiskFilter);
-                    return matchesSearch && matchesRisk;
-                });
+        if (filteredTags.length === 0) return;
 
-                if (filteredTags.length === 0 && searchVal !== '') return;
+        const isCollapsed = !!collapsedCats[cat.id] && !q;
+        const card = document.createElement("div");
+        card.className = `category-card ${cat.theme} ${isCollapsed ? "collapsed" : ""}`;
 
-                const isOpen = accordionStates[cat.id];
+        const tagsHtml = filteredTags.map(t => `
+          <div class="tag-item" onclick="testTagInSimulator('${t.name.replace(/'/g, "\'")}')">
+            <div class="tag-main">
+              <div class="tag-title-row">
+                <span class="tag-label-badge">ԹԵԳ</span>
+                <span class="tag-name">${t.name}</span>
+              </div>
+              <div class="tag-desc">${t.desc}</div>
+              <div class="tag-trigger"><strong>Trigger:</strong> ${t.trigger}</div>
+            </div>
+            <div class="tag-meta-right">
+              <span class="risk-badge ${getRiskBadgeClass(t.risk)}">${t.risk}</span>
+              <span class="sim-shortcut">Սիմուլյատոր ➔</span>
+            </div>
+          </div>
+        `).join("");
 
-                html += `
-                    <div class="bg-obsidian-card border border-obsidian-border rounded-xl overflow-hidden transition-all duration-200">
-                        <!-- Accordion Header -->
-                        <div onclick="toggleAccordion('${cat.id}')" class="p-4 bg-obsidian-row hover:bg-obsidian-hover cursor-pointer flex items-center justify-between transition-colors border-b border-obsidian-border/50 select-none">
-                            <div class="flex items-center space-x-3">
-                                <span class="text-xs font-bold px-2.5 py-1 rounded-md bg-obsidian-base border ${cat.color}">
-                                    ${cat.badge}
-                                </span>
-                                <h3 class="text-sm font-bold text-white">${cat.name}</h3>
-                                <span class="text-xs text-gray-500 font-medium">(${filteredTags.length} թեգ)</span>
-                            </div>
-                            <div class="text-gray-400">
-                                <i class="fa-solid ${isOpen ? 'fa-chevron-up' : 'fa-chevron-down'} text-sm transition-transform"></i>
-                            </div>
-                        </div>
+        card.innerHTML = `
+          <div class="category-header" onclick="toggleSingleCategory('${cat.id}')">
+            <div class="cat-title-wrap">
+              <div class="cat-badge-row">
+                <span class="cat-badge">ԿԱՏԵԳՈՐԻԱ</span>
+                <h2>${cat.name}</h2>
+              </div>
+              <p>${cat.subtitle}</p>
+            </div>
+            <div class="cat-right">
+              <span class="tag-count-pill">${filteredTags.length} Թեգ</span>
+              <div class="chevron-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div class="category-body">
+            ${tagsHtml}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
 
-                        <!-- Accordion Body -->
-                        <div class="${isOpen ? 'block' : 'hidden'} p-4 bg-obsidian-card">
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                ${filteredTags.map(tag => `
-                                    <div class="bg-obsidian-base border border-obsidian-border hover:border-toto-orange/60 rounded-xl p-3.5 space-y-2 flex flex-col justify-between transition-all group">
-                                        <div class="space-y-2">
-                                            <div class="flex items-start justify-between gap-2">
-                                                <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
-                                                    <span class="bg-toto-orange/20 text-toto-orange border border-toto-orange/40 text-[9px] font-black px-1.5 py-0.5 rounded tracking-wide uppercase">ԹԵԳ</span>
-                                                    <h4 class="text-xs font-bold text-white group-hover:text-toto-orange transition-colors">${tag.name}</h4>
-                                                </div>
-                                                <div>${getRiskBadge(tag.risk)}</div>
-                                            </div>
-                                            <p class="text-[11px] text-gray-400 leading-relaxed">${tag.desc}</p>
-                                        </div>
-                                        <div class="pt-2 border-t border-obsidian-border/40 flex justify-end">
-                                            <button onclick="shortcutToSimulator('${tag.name}')" class="text-[11px] text-toto-orange hover:text-white font-semibold flex items-center space-x-1 group-hover:translate-x-1 transition-all">
-                                                <span>Սիմուլյատոր ➔</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
+    function testTagInSimulator(tagName) {
+      selectedTags.clear();
+      selectedTags.add(tagName);
+      activePresetIdx = null;
+      switchTab("simulator");
+      renderSimulator();
+    }
 
-            if (html === '') {
-                html = `
-                    <div class="bg-obsidian-card border border-obsidian-border rounded-xl p-8 text-center text-gray-400">
-                        <i class="fa-solid fa-magnifying-glass text-2xl mb-2 text-toto-orange"></i>
-                        <p class="text-sm font-semibold">Համապատասխան թեգեր չեն գտնվել:</p>
-                    </div>
-                `;
-            }
+    function applyPreset(idx) {
+      const preset = SOP_SCENARIOS[idx];
+      selectedTags = new Set(preset.tags);
+      activePresetIdx = idx;
+      document.getElementById("refInput").value = preset.ref;
+      renderSimulator();
+    }
 
-            container.innerHTML = html;
-        }
+    function toggleSimTag(tagName) {
+      if (selectedTags.has(tagName)) {
+        selectedTags.delete(tagName);
+      } else {
+        selectedTags.add(tagName);
+      }
+      activePresetIdx = null;
+      renderSimulator();
+    }
 
-        function toggleAccordion(catId) {
-            accordionStates[catId] = !accordionStates[catId];
-            renderTaxonomy();
-        }
+    function resetSimulator() {
+      selectedTags.clear();
+      activePresetIdx = null;
+      document.getElementById("refInput").value = "";
+      renderSimulator();
+    }
 
-        function toggleAllAccordions(openState) {
-            categories.forEach(cat => {
-                accordionStates[cat.id] = openState;
-            });
-            renderTaxonomy();
-        }
+    function evaluateRules(tagsArr) {
+      const has = (name) => tagsArr.includes(name);
 
-        function setRiskFilter(risk) {
-            activeRiskFilter = risk;
-            document.querySelectorAll('.risk-pill').forEach(btn => {
-                if (btn.getAttribute('data-risk') === risk) {
-                    btn.className = "risk-pill active-pill border border-toto-orange bg-toto-orange/10 text-toto-orange text-xs px-3 py-1 rounded-full font-medium transition-all";
-                } else {
-                    btn.className = "risk-pill border border-obsidian-border text-gray-400 hover:bg-obsidian-hover text-xs px-3 py-1 rounded-full font-medium transition-all";
-                }
-            });
-            renderTaxonomy();
-        }
+      if (tagsArr.length === 0) {
+        return { state: "Active", reason: "—" };
+      }
 
-        function filterTaxonomy() {
-            renderTaxonomy();
-        }
+      if (has("Fake User / Duplicate CNP")) {
+        return { state: "Deleted", reason: "Violation of terms and conditions" };
+      }
 
-        function shortcutToSimulator(tagName) {
-            activeSimulatorTags = new Set([tagName]);
-            activePresetId = null;
-            renderPresetsGrid();
-            renderSimulatorChips();
-            updateDecisionEngine();
-            switchTab('tab2');
-            showToast(`Թեգը "${tagName}" ավելացվեց սիմուլյատորում`);
-        }
+      if (has("Underage (<18) / Minor Involved")) {
+        return { state: "Blocked", reason: "Underage Gambling" };
+      }
 
-        // RENDER TAB 2: PRESETS & SIMULATOR CHIPS
-        function renderPresetsGrid() {
-            const grid = document.getElementById('presets-grid');
-            grid.innerHTML = sopPresets.map(preset => {
-                const isActive = activePresetId === preset.id;
-                return `
-                    <button onclick="applyPreset(${preset.id})" class="p-2.5 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between ${
-                        isActive 
-                        ? 'bg-toto-orange/10 border-toto-orange text-white glowing-border' 
-                        : 'bg-obsidian-base border-obsidian-border hover:border-gray-500 text-gray-300'
-                    }">
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-[11px] font-bold ${isActive ? 'text-toto-orange' : 'text-gray-400'}">${preset.title}</span>
-                                ${isActive ? '<span class="text-[9px] bg-toto-orange text-white px-1.5 py-0.2 rounded font-extrabold">✓ ԱԿՏԻՎ</span>' : ''}
-                            </div>
-                            <p class="text-[10px] text-gray-400 line-clamp-2">${preset.desc}</p>
-                        </div>
-                    </button>
-                `;
-            }).join('');
-        }
+      if (
+        has("Account Used by Another Person") ||
+        has("Edited Document (Photoshop)") ||
+        has("AI / Deepfake Document") ||
+        has("Data Inconsistency")
+      ) {
+        return { state: "Blocked", reason: "Identity Verification Issue" };
+      }
 
-        function applyPreset(presetId) {
-            const preset = sopPresets.find(p => p.id === presetId);
-            if (!preset) return;
-            activePresetId = presetId;
-            activeSimulatorTags = new Set([...preset.tags]);
-            renderPresetsGrid();
-            renderSimulatorChips();
-            updateDecisionEngine();
-            showToast(`Ակտիվացված է Presets #${preset.id}: ${preset.title}`);
-        }
+      if (has("Duplicate Account")) {
+        return { state: "Blocked", reason: "Multiple Account" };
+      }
 
-        function renderSimulatorChips() {
-            const container = document.getElementById('simulator-chips-container');
-            container.innerHTML = categories.map(cat => `
-                <div class="space-y-2.5">
-                    <div class="flex items-center space-x-2">
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-obsidian-row border ${cat.color}">${cat.badge}</span>
-                        <h4 class="text-xs font-bold text-gray-300 uppercase tracking-wider">${cat.name.split(' (')[0]}</h4>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        ${cat.tags.map(tag => {
-                            const isSelected = activeSimulatorTags.has(tag.name);
-                            return `
-                                <button onclick="toggleTag('${tag.name}')" class="px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all duration-200 flex items-center space-x-1.5 ${
-                                    isSelected
-                                    ? 'bg-toto-orange text-white border-toto-orange shadow-md scale-105'
-                                    : 'bg-obsidian-base border-obsidian-border text-gray-300 hover:border-gray-500 hover:bg-obsidian-hover'
-                                }">
-                                    <i class="fa-solid ${isSelected ? 'fa-square-check' : 'fa-plus'} text-[11px]"></i>
-                                    <span>${tag.name}</span>
-                                </button>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            `).join('');
-        }
+      if (has("Bonus Fraud") || has("Game Bug / Exploit")) {
+        return { state: "Blocked", reason: "Fraud or Suspicious Activity" };
+      }
 
-        function toggleTag(tagName) {
-            if (activeSimulatorTags.has(tagName)) {
-                activeSimulatorTags.delete(tagName);
-            } else {
-                activeSimulatorTags.add(tagName);
-            }
-            activePresetId = null; // Unset preset if modified
-            renderPresetsGrid();
-            renderSimulatorChips();
-            updateDecisionEngine();
-        }
+      if (
+        has("Additional Verification Requested") ||
+        has("KYCAID Static Link") ||
+        has("Verification via Call") ||
+        has("Selfie with Current Date")
+      ) {
+        return { state: "Blocked For Transactions", reason: "Identity Verification Issue" };
+      }
 
-        function resetSimulator() {
-            activeSimulatorTags.clear();
-            activePresetId = null;
-            renderPresetsGrid();
-            renderSimulatorChips();
-            updateDecisionEngine();
-            showToast("Սիմուլյատորի թեգերը մաքրված են");
-        }
+      if (
+        has("Phone Number Not Owned") ||
+        has("Potential VIP client without KYCaid verification") ||
+        has("Tech Issue / Compensation") ||
+        has("P2P Collusion") ||
+        has("Opposite Betting") ||
+        has("Warning Issued") ||
+        has("Provider Blocked") ||
+        has("Syndicate / Linked Group") ||
+        has("Shared Device") ||
+        has("Blacklisted / Do Not Reopen") ||
+        has("Live Casino Risk") ||
+        has("Fast Games / Crash Risk") ||
+        has("Slots / RTP Abuse") ||
+        has("Under Investigation")
+      ) {
+        return { state: "Active", reason: "—" };
+      }
 
-        // DECISION ENGINE BUSINESS LOGIC (EXACT MATCH FOR SPECIFIED RULES)
-        function updateDecisionEngine() {
-            const tags = Array.from(activeSimulatorTags);
-            
-            let state = 'Active (Ակտիվ)';
-            let reason = '—';
-            let badgeClass = 'status-badge-active';
-            let iconClass = 'fa-solid fa-circle-check';
+      return { state: "Active", reason: "—" };
+    }
 
-            // Explicit Rule Lists
-            const blockedTxTags = [
-                'KYC Verification', 
-                'KYCAID Static Link', 
-                'Verification via Call', 
-                'Selfie with Current Date', 
-                'Additional Verification Requested'
-            ];
+    function getStatePillClass(state) {
+      if (state === "Deleted") return "state-deleted";
+      if (state === "Blocked") return "state-blocked";
+      if (state === "Blocked For Transactions") return "state-tx-block";
+      return "state-active";
+    }
 
-            const blockedTags = [
-                'Data Inconsistency', 
-                'Account Used by Another Person', 
-                'Edited Document (Photoshop)', 
-                'AI / Deepfake Document', 
-                'Bonus Fraud', 
-                'Underage (<18) / Minor Involved'
-            ];
+    function renderSimulator() {
+      const presetsEl = document.getElementById("presetsContainer");
+      presetsEl.innerHTML = SOP_SCENARIOS.map((sc, idx) => `
+        <button class="preset-btn ${activePresetIdx === idx ? "active" : ""}" onclick="applyPreset(${idx})">
+          <span>${sc.title}</span>
+          ${activePresetIdx === idx ? '<span class="preset-active-tag">✓ ԱԿՏԻՎ</span>' : ""}
+        </button>
+      `).join("");
 
-            const deletedTags = ['Fake User / Duplicate CNP'];
+      const tagsEl = document.getElementById("simulatorTagsContainer");
+      tagsEl.innerHTML = CATEGORIES.map(cat => {
+        const countInCat = cat.tags.filter(t => selectedTags.has(t.name)).length;
+        const chipsHtml = cat.tags.map(t => {
+          const isSel = selectedTags.has(t.name);
+          return `
+            <button class="tag-chip ${isSel ? "selected" : ""}" onclick="toggleSimTag('${t.name.replace(/'/g, "\'")}')">
+              ${isSel ? "✓ " : ""}${t.name}
+            </button>
+          `;
+        }).join("");
 
-            // Priority Check Rule Engine
-            const hasDeleted = tags.some(t => deletedTags.includes(t));
-            const hasBlocked = tags.some(t => blockedTags.includes(t));
-            const hasBlockedTx = tags.some(t => blockedTxTags.includes(t));
-            const hasBlacklistedAlone = tags.length === 1 && tags[0] === 'Blacklisted / Do Not Reopen';
+        return `
+          <div class="sim-cat-group">
+            <div class="sim-cat-title">
+              <span>${cat.name}</span>
+              <span>${countInCat > 0 ? countInCat + " ընտրված" : ""}</span>
+            </div>
+            <div class="chips-wrap">${chipsHtml}</div>
+          </div>
+        `;
+      }).join("");
 
-            if (hasDeleted) {
-                state = 'Deleted (Հեռացված)';
-                reason = 'Violation of terms and conditions';
-                badgeClass = 'status-badge-deleted';
-                iconClass = 'fa-solid fa-user-slash';
-            } else if (hasBlocked) {
-                state = 'Blocked (Բլոկավորված)';
-                badgeClass = 'status-badge-blocked';
-                iconClass = 'fa-solid fa-ban';
+      updateEngine();
+    }
 
-                if (tags.includes('Underage (<18) / Minor Involved')) {
-                    reason = 'Underage Gambling';
-                } else if (tags.includes('Bonus Fraud')) {
-                    reason = 'Fraud or Suspicious Activity';
-                } else if (
-                    tags.includes('Data Inconsistency') || 
-                    tags.includes('Account Used by Another Person') || 
-                    tags.includes('Edited Document (Photoshop)') || 
-                    tags.includes('AI / Deepfake Document')
-                ) {
-                    reason = 'Identity Verification Issue';
-                } else {
-                    reason = 'Fraud or Suspicious Activity';
-                }
-            } else if (hasBlockedTx) {
-                state = 'Blocked For Transactions (Սահմանափակված)';
-                reason = 'Identity Verification Issue';
-                badgeClass = 'status-badge-blockedTx';
-                iconClass = 'fa-solid fa-triangle-exclamation';
-            } else if (hasBlacklistedAlone) {
-                // Rule specified: Blacklisted / Do Not Reopen -> Active when alone
-                state = 'Active (Ակտիվ)';
-                reason = '—';
-                badgeClass = 'status-badge-active';
-                iconClass = 'fa-solid fa-circle-check';
-            } else {
-                // Default fallback: Phone Number Not Owned, VIP w/o KYCaid, Tech Issue, Fast Games, etc. -> Active (Reason: "—")
-                state = 'Active (Ակտիվ)';
-                reason = '—';
-                badgeClass = 'status-badge-active';
-                iconClass = 'fa-solid fa-circle-check';
-            }
+    function updateEngine() {
+      const tagsArr = Array.from(selectedTags);
+      const decision = evaluateRules(tagsArr);
+      const refVal = document.getElementById("refInput").value.trim() || "N/A";
 
-            // Update DOM
-            const stateEl = document.getElementById('sim-account-state');
-            stateEl.className = `p-4 rounded-xl font-extrabold text-lg flex items-center justify-between transition-all ${badgeClass}`;
-            stateEl.innerHTML = `<span>${state}</span><i class="${iconClass}"></i>`;
+      document.getElementById("engineState").innerHTML = `
+        <span class="state-pill ${getStatePillClass(decision.state)}">${decision.state}</span>
+      `;
+      document.getElementById("engineReason").textContent = decision.reason;
+      document.getElementById("selectedCount").textContent = tagsArr.length;
 
-            document.getElementById('sim-system-reason').innerText = reason;
+      const selContainer = document.getElementById("engineSelectedTags");
+      if (tagsArr.length === 0) {
+        selContainer.innerHTML = `<span style="color: var(--text-muted); font-size: 12px;">Թեգ ընտրված չէ</span>`;
+      } else {
+        selContainer.innerHTML = tagsArr.map(t => `<span class="matrix-tag-badge">${t}</span>`).join("");
+      }
 
-            // Selected tags badges
-            const tagsBadgeContainer = document.getElementById('sim-selected-tags-badge');
-            if (tags.length === 0) {
-                tagsBadgeContainer.innerHTML = `<span class="text-xs text-gray-500 italic">Թեգեր ընտրված չեն</span>`;
-            } else {
-                tagsBadgeContainer.innerHTML = tags.map(t => `
-                    <span class="bg-obsidian-row border border-toto-orange/50 text-toto-orange text-xs font-semibold px-2.5 py-1 rounded-lg flex items-center space-x-1">
-                        <span>${t}</span>
-                        <i onclick="toggleTag('${t}')" class="fa-solid fa-xmark hover:text-white cursor-pointer ml-1"></i>
-                    </span>
-                `).join('');
-            }
+      const tagsFormatted = tagsArr.length > 0 ? tagsArr.map(t => `[${t}]`).join(" + ") : "[None]";
+      const crmText = `State: ${decision.state}\nReason: ${decision.reason}\nTags: ${tagsFormatted}\nReference: ${refVal}`;
+      document.getElementById("crmOutput").textContent = crmText;
+    }
 
-            // Generate Copyable CRM Note Output
-            const refId = document.getElementById('sim-reference-input').value.trim() || 'N/A';
-            const formattedTags = tags.length > 0 ? tags.join(' | ') : 'No Tags Selected';
-            
-            const crmNote = `[RISK ASSESSMENT REPORT]
-Reference ID: ${refId}
-Timestamp: ${new Date().toLocaleString('hy-AM')}
-Account State: ${state}
-System Reason: ${reason}
-Applied Tags: ${formattedTags}
-Action Required: Follow SOP Risk Decision Rules`;
+    function copyCrmNote() {
+      const text = document.getElementById("crmOutput").textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById("copyBtn");
+        const orig = btn.textContent;
+        btn.textContent = "✓ Պատճենված է (Copied!)";
+        setTimeout(() => { btn.textContent = orig; }, 1600);
+      });
+    }
 
-            document.getElementById('sim-crm-note').value = crmNote;
-        }
+    function renderMatrix() {
+      const q = document.getElementById("matrixSearch").value.trim().toLowerCase();
+      const tbody = document.getElementById("matrixBody");
+      tbody.innerHTML = "";
 
-        // COPY CRM NOTE TO CLIPBOARD
-        function copyCrmNote() {
-            const textarea = document.getElementById('sim-crm-note');
-            textarea.select();
-            textarea.setSelectionRange(0, 99999);
-            document.execCommand('copy');
-            showToast("CRM Note-ը հաջողությամբ պատճենվեց:");
-        }
+      SOP_SCENARIOS.forEach((sc, idx) => {
+        const match = !q ||
+          sc.title.toLowerCase().includes(q) ||
+          sc.sub.toLowerCase().includes(q) ||
+          sc.state.toLowerCase().includes(q) ||
+          sc.reason.toLowerCase().includes(q) ||
+          sc.tags.some(t => t.toLowerCase().includes(q));
 
-        // RENDER TAB 3: SOP MATRIX
-        const sopMatrixData = [
-            { id: 1, name: 'Phone Number Not Owned', tags: ['Phone Number Not Owned'], state: 'Active', reason: '—', sop: 'Ուղարկել SMS հաստատման կոդ նոր հեռախոսահամարին, վերիֆիկացնել տիրապետումը:' },
-            { id: 2, name: 'VIP without KYCaid', tags: ['Potential VIP client without KYCaid verification'], state: 'Active', reason: '—', sop: 'Փոխանցել VIP մենեջերին, ուղարկել KYCAID անհատական հղում 24 ժամվա ընթացքում:' },
-            { id: 3, name: 'Tech Issue / Compensation', tags: ['Tech Issue / Compensation'], state: 'Active', reason: '—', sop: 'Ստուգել խաղային սեսիան IT/Provider log-երով, անհրաժեշտության դեպքում կատարել manual credit:' },
-            { id: 4, name: 'Live / Fast Games Anomaly', tags: ['Live / Fast Games Anomaly'], state: 'Active', reason: '—', sop: 'Ուղարկել ռիսկի վերլուծաբանին bets history-ի խորացված մոնիտորինգի համար:' },
-            { id: 5, name: 'Verification Call / Selfie', tags: ['Verification via Call', 'Selfie with Current Date'], state: 'Blocked For Transactions', reason: 'Identity Verification Issue', sop: 'Սահմանափակել ելքագրումները: Կազմակերպել տեսազանգ + սելֆի ընթացիկ ամսաթվով:' },
-            { id: 6, name: 'Data Inconsistency / Photoshop', tags: ['Data Inconsistency', 'Edited Document (Photoshop)'], state: 'Blocked', reason: 'Identity Verification Issue', sop: 'Բլոկավորել աքաունթը: Պահանջել բնօրինակ փաստաթղթերի նոր լուսանկարներ առանց խմբագրման:' },
-            { id: 7, name: 'Bonus Fraud', tags: ['Bonus Fraud'], state: 'Blocked', reason: 'Fraud or Suspicious Activity', sop: 'Բլոկավորել աքաունթը, զրոյացնել ապօրինի ստացված բոնուսային միջոցները:' },
-            { id: 8, name: 'Blacklisted Alone', tags: ['Blacklisted / Do Not Reopen'], state: 'Active', reason: '—', sop: 'Մոնիտորինգի ենթարկել ակտիվությունը: Չթույլատրել նոր աքաունթների վերաբացում:' },
-            { id: 9, name: 'Underage (<18)', tags: ['Underage (<18) / Minor Involved'], state: 'Blocked', reason: 'Underage Gambling', sop: 'Բլոկավորել աքաունթը, վերադարձնել սկզբնական դեպոզիտի մնացորդը, փակել հաշիվը:' },
-            { id: 10, name: 'Fake User / Duplicate CNP', tags: ['Fake User / Duplicate CNP'], state: 'Deleted', reason: 'Violation of terms and conditions', sop: 'Վերջնական հեռացնել / ապաակտիվացնել աքաունթը համակարգից:' }
-        ];
+        if (!match) return;
 
-        function renderSopMatrix() {
-            const tbody = document.getElementById('sop-matrix-body');
-            const searchVal = document.getElementById('sop-search').value.toLowerCase().trim();
+        const tagsHtml = sc.tags.map(t => `<span class="matrix-tag-badge">${t}</span>`).join("");
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="row-num">${idx + 1}</td>
+          <td>
+            <div class="sop-title">${sc.title}</div>
+            <div class="sop-sub">${sc.sub}</div>
+          </td>
+          <td><span class="state-pill ${getStatePillClass(sc.state)}" style="font-size: 12px; padding: 4px 10px;">${sc.state}</span></td>
+          <td style="font-weight: 600; color: #E2E8F0;">${sc.reason}</td>
+          <td>${tagsHtml}</td>
+          <td><span class="ref-code">${sc.ref}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
 
-            const filteredData = sopMatrixData.filter(row => {
-                return row.name.toLowerCase().includes(searchVal) ||
-                       row.tags.join(' ').toLowerCase().includes(searchVal) ||
-                       row.state.toLowerCase().includes(searchVal) ||
-                       row.reason.toLowerCase().includes(searchVal) ||
-                       row.sop.toLowerCase().includes(searchVal);
-            });
-
-            tbody.innerHTML = filteredData.map(row => {
-                let badgeClass = 'status-badge-active';
-                if (row.state === 'Blocked For Transactions') badgeClass = 'status-badge-blockedTx';
-                if (row.state === 'Blocked') badgeClass = 'status-badge-blocked';
-                if (row.state === 'Deleted') badgeClass = 'status-badge-deleted';
-
-                return `
-                    <tr class="hover:bg-obsidian-row/60 transition-colors">
-                        <td class="p-3.5 text-center font-bold text-gray-500">${row.id}</td>
-                        <td class="p-3.5 font-bold text-white">${row.name}</td>
-                        <td class="p-3.5">
-                            <div class="flex flex-wrap gap-1">
-                                ${row.tags.map(t => `<span class="bg-obsidian-base border border-obsidian-border text-toto-orange px-2 py-0.5 rounded text-[11px] font-semibold">${t}</span>`).join('')}
-                            </div>
-                        </td>
-                        <td class="p-3.5">
-                            <span class="px-2.5 py-1 rounded-lg font-bold text-[11px] ${badgeClass}">${row.state}</span>
-                        </td>
-                        <td class="p-3.5 font-mono text-gray-300">${row.reason}</td>
-                        <td class="p-3.5 text-gray-300 text-xs leading-relaxed max-w-md">${row.sop}</td>
-                        <td class="p-3.5 text-center">
-                            <button onclick="applyPreset(${row.id}); switchTab('tab2');" class="px-3 py-1.5 bg-toto-orange/10 hover:bg-toto-orange text-toto-orange hover:text-white border border-toto-orange/40 rounded-lg font-semibold text-[11px] transition-all whitespace-nowrap">
-                                Փորձարկել ➔
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        function filterSopMatrix() {
-            renderSopMatrix();
-        }
-
-        // PRINT / EXPORT PDF FUNCTION
-        function triggerPrint() {
-            window.print();
-        }
-
-        // CUSTOM TOAST NOTIFICATION
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            const msgEl = document.getElementById('toast-message');
-            msgEl.innerText = message;
-            
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            toast.classList.add('translate-y-0', 'opacity-100');
-
-            setTimeout(() => {
-                toast.classList.remove('translate-y-0', 'opacity-100');
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
-        }
-    </script>
+    // Initialize
+    renderTaxonomy();
+    renderSimulator();
+    renderMatrix();
+  </script>
 </body>
 </html>
