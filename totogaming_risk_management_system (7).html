@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="hy" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TotoGaming Risk Management — Player Categorization & Tagging System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        obsidian: {
+                            base: '#111317',
+                            card: '#181B20',
+                            row: '#1E2229',
+                            border: '#2C313A',
+                            hover: '#252A34'
+                        },
+                        toto: {
+                            orange: '#FF5500',
+                            orangeGlow: 'rgba(255, 85, 0, 0.25)',
+                            orangeDark: '#D44600'
+                        },
+                        status: {
+                            active: '#10B981',
+                            blockedTx: '#F59E0B',
+                            blocked: '#EF4444',
+                            deleted: '#8B5CF6'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #111317;
+            color: #E2E8F0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111317;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2C313A;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FF5500;
+        }
+
+        .glowing-border {
+            box-shadow: 0 0 15px rgba(255, 85, 0, 0.3);
+            border-color: #FF5500 !important;
+        }
+
+        .status-badge-active {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: #10B981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .status-badge-blockedTx {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: #F59E0B;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        .status-badge-blocked {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #EF4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .status-badge-deleted {
+            background-color: rgba(139, 92, 246, 0.15);
+            color: #A78BFA;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        /* Print formatting */
+        @media print {
+            header, footer, nav, .no-print {
+                display: none !important;
+            }
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+            }
+            .print-container {
+                display: block !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+            }
+            .bg-obsidian-card, .bg-obsidian-row {
+                background-color: #f8fafc !important;
+                border: 1px solid #cbd5e1 !important;
+                color: #000000 !important;
+            }
+            .text-white, .text-gray-200, .text-gray-300 {
+                color: #0f172a !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-obsidian-base text-gray-200 antialiased selection:bg-toto-orange selection:text-white">
+
+    <!-- Toast Notification Box (Replaces alert) -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 ease-in-out bg-obsidian-card border border-toto-orange px-5 py-3.5 rounded-xl shadow-2xl flex items-center space-x-3 text-sm">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-toto-orange text-lg"></i>
+        <span id="toast-message" class="font-medium text-white"></span>
+    </div>
+
+    <!-- MAIN HEADER -->
+    <header class="bg-obsidian-card border-b border-obsidian-border sticky top-0 z-40 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                
+                <!-- Logo & Titles -->
+                <div class="flex items-start space-x-4">
+                    <div class="bg-toto-orange px-3 py-1.5 rounded-lg flex items-center space-x-2 shadow-md">
+                        <i class="fa-solid fa-shield-halved text-white text-lg"></i>
+                        <span class="font-extrabold tracking-wider text-white text-sm">TOTOGAMING <span class="opacity-80">|</span> RISK</span>
+                    </div>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Player Categorization & Tagging System</h1>
+                        <p class="text-xs sm:text-sm text-gray-400 mt-0.5">
+                            Հաճախորդների թեգավորման, սեգմենտավորման և ֆռոդի կանխարգելման միասնական 24/7 համակարգ
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Header Actions -->
+                <div class="flex items-center space-x-3 no-print">
+                    <button onclick="triggerPrint()" class="inline-flex items-center space-x-2 bg-obsidian-row hover:bg-obsidian-hover text-gray-200 hover:text-white border border-obsidian-border px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200">
+                        <i class="fa-solid fa-file-pdf text-toto-orange"></i>
+                        <span>Տպել / PDF</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- 4 INTERACTIVE KPI CARDS -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
+            
+            <!-- KPI 1: 4 Categories -->
+            <div onclick="switchTab('tab1', {expandAll: false})" class="bg-obsidian-card border border-obsidian-border hover:border-toto-orange rounded-xl p-4 transition-all duration-200 cursor-pointer group hover:shadow-lg">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Կատեգորիաներ</span>
+                    <div class="w-8 h-8 rounded-lg bg-orange-500/10 text-toto-orange flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-folder-tree"></i>
+                    </div>
+                </div>
+                <div class="mt-2 flex items-baseline space-x-2">
+                    <span class="text-2xl font-extrabold text-white">4</span>
+                    <span class="text-sm font-medium text-gray-400">Կատեգորիա</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-2 flex items-center group-hover:text-toto-orange transition-colors">
+                    <span>Բացել ըստ խմբերի</span>
+                    <i class="fa-solid fa-arrow-right ml-1 text-[10px]"></i>
+                </p>
+            </div>
+
+            <!-- KPI 2: 27 Tags -->
+            <div onclick="switchTab('tab1', {expandAll: true})" class="bg-obsidian-card border border-obsidian-border hover:border-toto-orange rounded-xl p-4 transition-all duration-200 cursor-pointer group hover:shadow-lg">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Գործառնական Թեգեր</span>
+                    <div class="w-8 h-8 rounded-lg bg-orange-500/10 text-toto-orange flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-tags"></i>
+                    </div>
+                </div>
+                <div class="mt-2 flex items-baseline space-x-2">
+                    <span class="text-2xl font-extrabold text-white">27</span>
+                    <span class="text-sm font-medium text-gray-400">Թեգ</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-2 flex items-center group-hover:text-toto-orange transition-colors">
+                    <span>Ցուցադրել բոլոր թեգերը</span>
+                    <i class="fa-solid fa-arrow-right ml-1 text-[10px]"></i>
+                </p>
+            </div>
+
+            <!-- KPI 3: 100% Coverage -->
+            <div onclick="switchTab('tab2')" class="bg-obsidian-card border border-obsidian-border hover:border-toto-orange rounded-xl p-4 transition-all duration-200 cursor-pointer group hover:shadow-lg">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Կանոնների Ծածկույթ</span>
+                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-square-check"></i>
+                    </div>
+                </div>
+                <div class="mt-2 flex items-baseline space-x-2">
+                    <span class="text-2xl font-extrabold text-white">100%</span>
+                    <span class="text-sm font-medium text-emerald-400">Ծածկույթ</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-2 flex items-center group-hover:text-toto-orange transition-colors">
+                    <span>Անցնել Սիմուլյատոր</span>
+                    <i class="fa-solid fa-arrow-right ml-1 text-[10px]"></i>
+                </p>
+            </div>
+
+            <!-- KPI 4: 10 SOP Scenarios -->
+            <div onclick="switchTab('tab3')" class="bg-obsidian-card border border-obsidian-border hover:border-toto-orange rounded-xl p-4 transition-all duration-200 cursor-pointer group hover:shadow-lg">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Գործառնական Սցենարներ</span>
+                    <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-list-check"></i>
+                    </div>
+                </div>
+                <div class="mt-2 flex items-baseline space-x-2">
+                    <span class="text-2xl font-extrabold text-white">10</span>
+                    <span class="text-sm font-medium text-gray-400">Սցենար</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-2 flex items-center group-hover:text-toto-orange transition-colors">
+                    <span>Տեսնել SOP Քարտեզը</span>
+                    <i class="fa-solid fa-arrow-right ml-1 text-[10px]"></i>
+                </p>
+            </div>
+        </div>
+
+        <!-- NAVIGATION TABS BAR -->
+        <div class="bg-obsidian-card border border-obsidian-border rounded-xl p-1.5 flex flex-wrap gap-1 no-print">
+            <button id="nav-tab1" onclick="switchTab('tab1')" class="flex-1 min-w-[200px] py-3 px-4 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 bg-toto-orange text-white shadow-md">
+                <i class="fa-solid fa-sitemap"></i>
+                <span>1. Taxonomy Explorer (Կատեգորիաներ և Թեգեր)</span>
+            </button>
+
+            <button id="nav-tab2" onclick="switchTab('tab2')" class="flex-1 min-w-[200px] py-3 px-4 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 text-gray-400 hover:text-white hover:bg-obsidian-hover">
+                <i class="fa-solid fa-microchip"></i>
+                <span>2. Live Flow Simulator (Սիմուլյատոր)</span>
+            </button>
+
+            <button id="nav-tab3" onclick="switchTab('tab3')" class="flex-1 min-w-[200px] py-3 px-4 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 text-gray-400 hover:text-white hover:bg-obsidian-hover">
+                <i class="fa-solid fa-table-list"></i>
+                <span>3. SOP Matrix (Գործառնական Քարտեզ)</span>
+            </button>
+        </div>
+
+        <!-- TAB 1: TAXONOMY EXPLORER -->
+        <section id="content-tab1" class="space-y-6">
+            
+            <!-- Controls Bar: Search & Filters -->
+            <div class="bg-obsidian-card border border-obsidian-border rounded-xl p-4 space-y-4">
+                <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
+                    
+                    <!-- Search Input -->
+                    <div class="relative w-full md:w-96">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-gray-400 text-sm"></i>
+                        <input type="text" id="taxonomy-search" oninput="filterTaxonomy()" placeholder="Որոնել թեգեր, կատեգորիաներ, նկարագրություններ..." class="w-full bg-obsidian-base border border-obsidian-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-toto-orange transition-colors">
+                    </div>
+
+                    <!-- Expand / Collapse Buttons -->
+                    <div class="flex items-center space-x-2 w-full md:w-auto justify-end">
+                        <button onclick="toggleAllAccordions(true)" class="px-3 py-2 bg-obsidian-row hover:bg-obsidian-hover text-gray-300 hover:text-white border border-obsidian-border rounded-lg text-xs font-medium transition-colors flex items-center space-x-1.5">
+                            <i class="fa-solid fa-angles-down"></i>
+                            <span>Բացել Բոլորը</span>
+                        </button>
+                        <button onclick="toggleAllAccordions(false)" class="px-3 py-2 bg-obsidian-row hover:bg-obsidian-hover text-gray-300 hover:text-white border border-obsidian-border rounded-lg text-xs font-medium transition-colors flex items-center space-x-1.5">
+                            <i class="fa-solid fa-angles-up"></i>
+                            <span>Փակել Բոլորը</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Risk Level Filter Pills -->
+                <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-obsidian-border/50">
+                    <span class="text-xs text-gray-400 font-semibold mr-1">Ռիսկի Մակարդակ:</span>
+                    <button onclick="setRiskFilter('ALL')" class="risk-pill active-pill border border-toto-orange bg-toto-orange/10 text-toto-orange text-xs px-3 py-1 rounded-full font-medium transition-all" data-risk="ALL">Բոլորը</button>
+                    <button onclick="setRiskFilter('Critical')" class="risk-pill border border-obsidian-border text-red-400 hover:bg-red-500/10 text-xs px-3 py-1 rounded-full font-medium transition-all" data-risk="Critical">Critical</button>
+                    <button onclick="setRiskFilter('High')" class="risk-pill border border-obsidian-border text-orange-400 hover:bg-orange-500/10 text-xs px-3 py-1 rounded-full font-medium transition-all" data-risk="High">High</button>
+                    <button onclick="setRiskFilter('Medium')" class="risk-pill border border-obsidian-border text-yellow-400 hover:bg-yellow-500/10 text-xs px-3 py-1 rounded-full font-medium transition-all" data-risk="Medium">Medium</button>
+                    <button onclick="setRiskFilter('Warning')" class="risk-pill border border-obsidian-border text-blue-400 hover:bg-blue-500/10 text-xs px-3 py-1 rounded-full font-medium transition-all" data-risk="Warning">Warning</button>
+                    <button onclick="setRiskFilter('Tool/Process')" class="risk-pill border border-obsidian-border text-slate-400 hover:bg-slate-500/10 text-xs px-3 py-1 rounded-full font-medium transition-all" data-risk="Tool/Process">Tool/Process</button>
+                </div>
+            </div>
+
+            <!-- Categories Accordions Container -->
+            <div id="taxonomy-container" class="space-y-4">
+                <!-- Dynamically Rendered Accordions -->
+            </div>
+        </section>
+
+        <!-- TAB 2: LIVE FLOW SIMULATOR -->
+        <section id="content-tab2" class="hidden space-y-6">
+            
+            <!-- 10 SOP PRESETS SELECTOR -->
+            <div class="bg-obsidian-card border border-obsidian-border rounded-xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-toto-orange text-lg"></i>
+                        <h2 class="text-base font-bold text-white uppercase tracking-wider">10 Ստանդարտ SOP Սցենարներ (Presets)</h2>
+                    </div>
+                    <span class="text-xs text-gray-400">Ընտրեք պատրաստի սցենար արագ թեստավորման համար</span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5" id="presets-grid">
+                    <!-- Dynamic Preset Buttons -->
+                </div>
+            </div>
+
+            <!-- SIMULATOR WORKSPACE: CHIPS SELECTOR + STICKY DECISION ENGINE -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Left Column: Tag Chips Selector (7 cols) -->
+                <div class="lg:col-span-7 space-y-5">
+                    <div class="bg-obsidian-card border border-obsidian-border rounded-xl p-5">
+                        <div class="flex items-center justify-between mb-4 border-b border-obsidian-border pb-3">
+                            <div>
+                                <h3 class="text-base font-bold text-white">Ակտիվ Թեգերի Ընտրություն</h3>
+                                <p class="text-xs text-gray-400">Սեղմեք թեգերին՝ դրանք ավելացնելու կամ հեռացնելու համար</p>
+                            </div>
+                            <button onclick="resetSimulator()" class="px-3 py-1.5 bg-obsidian-row hover:bg-red-500/10 text-gray-400 hover:text-red-400 border border-obsidian-border rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1">
+                                <i class="fa-solid fa-rotate-left"></i>
+                                <span>Մաքրել</span>
+                            </button>
+                        </div>
+
+                        <!-- Chip Categories -->
+                        <div id="simulator-chips-container" class="space-y-5">
+                            <!-- Dynamic Chip Groups -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Sticky Decision Engine Panel (5 cols) -->
+                <div class="lg:col-span-5">
+                    <div class="bg-obsidian-card border border-obsidian-border rounded-xl p-6 sticky top-24 space-y-6 shadow-2xl">
+                        
+                        <div class="flex items-center justify-between border-b border-obsidian-border pb-4">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 rounded-full bg-toto-orange animate-pulse"></div>
+                                <h3 class="text-base font-extrabold text-white tracking-wide uppercase">Decision Engine Output</h3>
+                            </div>
+                            <span class="text-[11px] font-mono bg-obsidian-row px-2 py-1 rounded text-gray-400 border border-obsidian-border">REAL-TIME</span>
+                        </div>
+
+                        <!-- Result 1: Account State -->
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Աքաունթի Կարգավիճակ (Account State)</label>
+                            <div id="sim-account-state" class="p-4 rounded-xl font-extrabold text-lg flex items-center justify-between status-badge-active transition-all">
+                                <span>Active (Ակտիվ)</span>
+                                <i id="sim-state-icon" class="fa-solid fa-circle-check"></i>
+                            </div>
+                        </div>
+
+                        <!-- Result 2: System Reason -->
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Համակարգային Պատճառ (System Reason)</label>
+                            <div id="sim-system-reason" class="p-3.5 bg-obsidian-base border border-obsidian-border rounded-xl font-mono text-sm text-gray-200">
+                                —
+                            </div>
+                        </div>
+
+                        <!-- Result 3: Selected Tags -->
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Ընտրված Թեգեր</label>
+                            <div id="sim-selected-tags-badge" class="min-h-[42px] p-3 bg-obsidian-base border border-obsidian-border rounded-xl flex flex-wrap gap-1.5 items-center">
+                                <span class="text-xs text-gray-500 italic">Թեգեր ընտրված չեն</span>
+                            </div>
+                        </div>
+
+                        <!-- Case ID Input -->
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Case / Reference ID (Օպցիոնալ)</label>
+                            <input type="text" id="sim-reference-input" oninput="updateDecisionEngine()" placeholder="Օրինակ՝ CASE-89241" value="CASE-89241" class="w-full bg-obsidian-base border border-obsidian-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-toto-orange font-mono">
+                        </div>
+
+                        <!-- Copyable CRM Note Output -->
+                        <div class="space-y-2 pt-2 border-t border-obsidian-border">
+                            <div class="flex items-center justify-between">
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">CRM Note Output</label>
+                                <button onclick="copyCrmNote()" class="text-xs bg-toto-orange hover:bg-toto-orangeDark text-white px-3 py-1.5 rounded-lg font-bold transition-all flex items-center space-x-1 shadow-md">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span>Պատճենել CRM Note</span>
+                                </button>
+                            </div>
+                            <textarea id="sim-crm-note" readonly rows="4" class="w-full bg-obsidian-base border border-obsidian-border rounded-xl p-3 font-mono text-xs text-gray-300 focus:outline-none resize-none selection:bg-toto-orange selection:text-white"></textarea>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- TAB 3: SOP MATRIX TABLE -->
+        <section id="content-tab3" class="hidden space-y-6">
+            <div class="bg-obsidian-card border border-obsidian-border rounded-xl p-5 space-y-4">
+                
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-white">Գործառնական Քարտեզ (Standard Operating Procedure Matrix)</h2>
+                        <p class="text-xs text-gray-400">10 հիմնական ռիսկային սցենարների ավտոմատ որոշումների և SOP գործողությունների աղյուսակ</p>
+                    </div>
+
+                    <div class="relative w-full sm:w-72">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-400 text-xs"></i>
+                        <input type="text" id="sop-search" oninput="filterSopMatrix()" placeholder="Որոնել SOP աղյուսակում..." class="w-full bg-obsidian-base border border-obsidian-border rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-toto-orange">
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="overflow-x-auto rounded-xl border border-obsidian-border">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-obsidian-row border-b border-obsidian-border text-[11px] font-bold uppercase text-gray-400 tracking-wider">
+                                <th class="p-3.5 text-center w-12">#</th>
+                                <th class="p-3.5">Սցենար</th>
+                                <th class="p-3.5">Կիրառվող Թեգեր</th>
+                                <th class="p-3.5">Աքաունթի Կարգավիճակ</th>
+                                <th class="p-3.5">Համակարգային Պատճառ</th>
+                                <th class="p-3.5">Պահանջվող Risk / Operations SOP</th>
+                                <th class="p-3.5 text-center">Գործողություն</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sop-matrix-body" class="divide-y divide-obsidian-border text-xs">
+                            <!-- Dynamically Generated SOP Rows -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-obsidian-card border-t border-obsidian-border py-6 mt-12 no-print">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-gray-500 space-y-2">
+            <div class="flex items-center justify-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-toto-orange"></span>
+                <span class="font-bold text-gray-400">TOTOGAMING RISK MANAGEMENT SYSTEM</span>
+            </div>
+            <p>© 2026 TotoGaming Department of Risk & Anti-Fraud. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // DATA STRUCTURES: 4 Categories & 27 Clean Tags (NO CAT-01 or C01 code prefixes)
+        const categories = [
+            {
+                id: 'cat1',
+                name: '1. Verification & Identity Issues (Իդենտիֆիկացիայի և Վերիֆիկացիայի Խնդիրներ)',
+                badge: 'ԿԱՏԵԳՈՐԻԱ 01',
+                color: 'border-amber-500/40 text-amber-400',
+                tags: [
+                    { name: 'KYC Verification', risk: 'High', desc: 'Ստանդարտ KYC վերիֆիկացիոն փաստաթղթերի ստուգման ընթացք կամ պահանջ:' },
+                    { name: 'KYCAID Static Link', risk: 'Medium', desc: 'KYCAID ավտոմատացված համակարգի ստատիկ հղման ուղարկում հաճախորդին:' },
+                    { name: 'Verification via Call', risk: 'Medium', desc: 'Տեսազանգով կամ հեռախոսազանգով ինքնության հաստատման պահանջ:' },
+                    { name: 'Selfie with Current Date', risk: 'High', desc: 'Լրացուցիչ լուսանկար՝ անձնագրով և ընթացիկ ամսաթվով թղթով:' },
+                    { name: 'Additional Verification Requested', risk: 'High', desc: 'Լրացուցիչ բանկային, հասցեի կամ աղբյուրի փաստաթղթերի հարցում:' },
+                    { name: 'Phone Number Not Owned', risk: 'Warning', desc: 'Հեռախոսահամարը գրանցված է այլ անձի անունով (պահանջվում է թարմացում):' },
+                    { name: 'Potential VIP client without KYCaid verification', risk: 'Tool/Process', desc: 'Պոտենցիալ VIP հաճախորդ՝ առանց KYCAID ավտոմատ ստուգման:' }
+                ]
+            },
+            {
+                id: 'cat2',
+                name: '2. Fraud & Account Integrity (Ֆռոդ և Աքաունթի Անվտանգություն)',
+                badge: 'ԿԱՏԵԳՈՐԻԱ 02',
+                color: 'border-red-500/40 text-red-400',
+                tags: [
+                    { name: 'Data Inconsistency', risk: 'High', desc: 'Անձնական տվյալների անհամապատասխանություն համակարգում և փաստաթղթերում:' },
+                    { name: 'Account Used by Another Person', risk: 'High', desc: 'Աքաունթի փոխանցում կամ օգտագործում երրորդ անձանց կողմից:' },
+                    { name: 'Edited Document (Photoshop)', risk: 'Critical', desc: 'Խմբագրված, կեղծված կամ ֆոտոշոփված փաստաթղթի հայտնաբերում:' },
+                    { name: 'AI / Deepfake Document', risk: 'Critical', desc: 'Արհեստական բանականությամբ կամ Deepfake տեխնոլոգիայով գեներացված ֆայլ:' },
+                    { name: 'Bonus Fraud', risk: 'Critical', desc: 'Բոնուսների չարաշահում, չիտինգ կամ ապօրինի սքեմաների կիրառում:' },
+                    { name: 'Fake User / Duplicate CNP', risk: 'Critical', desc: 'Կեղծ անձնավորություն կամ կրկնվող ՀԾՀ (Հանրային Ծառայությունների Համարանիշ):' },
+                    { name: 'Blacklisted / Do Not Reopen', risk: 'Critical', desc: 'Սև ցուցակում ներառված հաճախորդ (չվերաբացվող աքաունթ):' }
+                ]
+            },
+            {
+                id: 'cat3',
+                name: '3. Gambling Policy & Compliance (Խաղային Քաղաքականություն և Compliance)',
+                badge: 'ԿԱՏԵԳՈՐԻԱ 03',
+                color: 'border-purple-500/40 text-purple-400',
+                tags: [
+                    { name: 'Underage (<18) / Minor Involved', risk: 'Critical', desc: 'Անչափահաս անձի (մինչև 18/21 տարեկան) խաղադրույքներ կամ մասնակցություն:' },
+                    { name: 'Live / Fast Games Anomaly', risk: 'High', desc: 'Live/Fast խաղերում կասկածելի խաղադրույքների օրինաչափություն կամ anomaly:' },
+                    { name: 'AML Suspicion / Pattern', risk: 'Critical', desc: 'Փողերի լվացման կասկածելի գործարքներ (Anti-Money Laundering):' },
+                    { name: 'Multi-Accounting Suspicion', risk: 'High', desc: 'Մեկից ավելի աքաունթների օգտագործման կասկած (Multi-account):' },
+                    { name: 'Chargeback Fraud / Disputed Deposit', risk: 'Critical', desc: 'Բանկային քարտի վիճարկված դեպոզիտ կամ չարջբեք:' },
+                    { name: 'Self-Exclusion Request', risk: 'Warning', desc: 'Խաղացողի կողմից ինքնաբացարկի կամ խաղադրույքների սահմանափակման դիմում:' },
+                    { name: 'High-Risk Region / Geo Fraud', risk: 'Medium', desc: 'Արգելված կամ բարձր ռիսկային աշխարհագրական IP/VPN օգտագործում:' }
+                ]
+            },
+            {
+                id: 'cat4',
+                name: '4. Operations, Technical & Support (Գործառնական, Տեխնիկական և Սպասարկում)',
+                badge: 'ԿԱՏԵԳՈՐԻԱ 04',
+                color: 'border-blue-500/40 text-blue-400',
+                tags: [
+                    { name: 'Tech Issue / Compensation', risk: 'Tool/Process', desc: 'Տեխնիկական ծրագրային խափանում կամ փոխհատուցման գործընթաց:' },
+                    { name: 'Pending Document Review', risk: 'Tool/Process', desc: 'Փաստաթղթերը գտնվում են ռիսկի թիմի վերանայման փուլում:' },
+                    { name: 'Payment Gateway Error', risk: 'Tool/Process', desc: 'Վճարային համակարգի պրովայդերի կողմից գրանցված սխալ:' },
+                    { name: 'Manual Limit Adjustment', risk: 'Tool/Process', desc: 'Խաղադրույքների կամ ելքագրման սահմանաչափերի ձեռքով փոփոխություն:' },
+                    { name: 'VIP Special Treatment', risk: 'Tool/Process', desc: 'VIP հաճախորդի հատուկ սպասարկման և մոնիտորինգի ռեժիմ:' },
+                    { name: 'Risk Monitoring Watchlist', risk: 'Warning', desc: 'Հաճախորդը գտնվում է ռիսկի բաժնի հատուկ դիտարկման ցուցակում:' }
+                ]
+            }
+        ];
+
+        // 10 SOP PRESETS (STRICTLY matching logic specifications)
+        const sopPresets = [
+            { id: 1, title: '1. Phone Number Not Owned', tags: ['Phone Number Not Owned'], desc: 'Հեռախոսահամարը այլ անձի անունով է' },
+            { id: 2, title: '2. VIP without KYCaid', tags: ['Potential VIP client without KYCaid verification'], desc: 'VIP հաճախորդ առանց ավտոմատ KYCaid' },
+            { id: 3, title: '3. Tech Issue / Compensation', tags: ['Tech Issue / Compensation'], desc: 'Տեխնիկական խափանում կամ փոխհատուցում' },
+            { id: 4, title: '4. Fast Games Anomaly', tags: ['Live / Fast Games Anomaly'], desc: 'Կասկածելի խաղային ակտիվություն' },
+            { id: 5, title: '5. Verification Call / Selfie', tags: ['Verification via Call', 'Selfie with Current Date'], desc: 'Զանգով վերիֆիկացիա և Սելֆի' },
+            { id: 6, title: '6. Inconsistency / Photoshop', tags: ['Data Inconsistency', 'Edited Document (Photoshop)'], desc: 'Տվյալների անհամապատասխանություն և Ֆոտոշոփ' },
+            { id: 7, title: '7. Bonus Fraud', tags: ['Bonus Fraud'], desc: 'Բոնուսային ֆռոդ և չարաշահում' },
+            { id: 8, title: '8. Blacklisted Alone', tags: ['Blacklisted / Do Not Reopen'], desc: 'Սև ցուցակ (առանձին)' },
+            { id: 9, title: '9. Underage Gambling', tags: ['Underage (<18) / Minor Involved'], desc: 'Անչափահաս խաղացող' },
+            { id: 10, title: '10. Fake User / Duplicate CNP', tags: ['Fake User / Duplicate CNP'], desc: 'Կեղծ օգտատեր կամ կրկնվող ՀԾՀ' }
+        ];
+
+        // APP STATE
+        let activeTab = 'tab1';
+        let activeRiskFilter = 'ALL';
+        let activeSimulatorTags = new Set(['Phone Number Not Owned']);
+        let activePresetId = 1;
+        let accordionStates = { cat1: true, cat2: true, cat3: true, cat4: true };
+
+        // INITIALIZATION
+        window.onload = function() {
+            renderTaxonomy();
+            renderSimulatorChips();
+            renderPresetsGrid();
+            renderSopMatrix();
+            updateDecisionEngine();
+        };
+
+        // NAVIGATION TABS SWITCHER
+        function switchTab(tabId, options = {}) {
+            activeTab = tabId;
+            ['tab1', 'tab2', 'tab3'].forEach(t => {
+                const navBtn = document.getElementById(`nav-${t}`);
+                const contentSec = document.getElementById(`content-${t}`);
+                if (t === tabId) {
+                    navBtn.className = "flex-1 min-w-[200px] py-3 px-4 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 bg-toto-orange text-white shadow-md";
+                    contentSec.classList.remove('hidden');
+                } else {
+                    navBtn.className = "flex-1 min-w-[200px] py-3 px-4 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 text-gray-400 hover:text-white hover:bg-obsidian-hover";
+                    contentSec.classList.add('hidden');
+                }
+            });
+
+            if (options.expandAll !== undefined) {
+                toggleAllAccordions(options.expandAll);
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // RISK PILL BADGE HELPER
+        function getRiskBadge(risk) {
+            switch(risk) {
+                case 'Critical':
+                    return `<span class="bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">Critical</span>`;
+                case 'High':
+                    return `<span class="bg-orange-500/15 text-orange-400 border border-orange-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">High</span>`;
+                case 'Medium':
+                    return `<span class="bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">Medium</span>`;
+                case 'Warning':
+                    return `<span class="bg-blue-500/15 text-blue-400 border border-blue-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">Warning</span>`;
+                default:
+                    return `<span class="bg-slate-500/15 text-slate-400 border border-slate-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">Tool/Process</span>`;
+            }
+        }
+
+        // RENDER TAB 1: TAXONOMY EXPLORER
+        function renderTaxonomy() {
+            const container = document.getElementById('taxonomy-container');
+            const searchVal = document.getElementById('taxonomy-search').value.toLowerCase().trim();
+
+            let html = '';
+
+            categories.forEach(cat => {
+                // Filter tags based on search and risk filter
+                const filteredTags = cat.tags.filter(tag => {
+                    const matchesSearch = tag.name.toLowerCase().includes(searchVal) || 
+                                          tag.desc.toLowerCase().includes(searchVal) ||
+                                          cat.name.toLowerCase().includes(searchVal);
+                    const matchesRisk = (activeRiskFilter === 'ALL') || (tag.risk === activeRiskFilter);
+                    return matchesSearch && matchesRisk;
+                });
+
+                if (filteredTags.length === 0 && searchVal !== '') return;
+
+                const isOpen = accordionStates[cat.id];
+
+                html += `
+                    <div class="bg-obsidian-card border border-obsidian-border rounded-xl overflow-hidden transition-all duration-200">
+                        <!-- Accordion Header -->
+                        <div onclick="toggleAccordion('${cat.id}')" class="p-4 bg-obsidian-row hover:bg-obsidian-hover cursor-pointer flex items-center justify-between transition-colors border-b border-obsidian-border/50 select-none">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-xs font-bold px-2.5 py-1 rounded-md bg-obsidian-base border ${cat.color}">
+                                    ${cat.badge}
+                                </span>
+                                <h3 class="text-sm font-bold text-white">${cat.name}</h3>
+                                <span class="text-xs text-gray-500 font-medium">(${filteredTags.length} թեգ)</span>
+                            </div>
+                            <div class="text-gray-400">
+                                <i class="fa-solid ${isOpen ? 'fa-chevron-up' : 'fa-chevron-down'} text-sm transition-transform"></i>
+                            </div>
+                        </div>
+
+                        <!-- Accordion Body -->
+                        <div class="${isOpen ? 'block' : 'hidden'} p-4 bg-obsidian-card">
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                ${filteredTags.map(tag => `
+                                    <div class="bg-obsidian-base border border-obsidian-border hover:border-toto-orange/60 rounded-xl p-3.5 space-y-2 flex flex-col justify-between transition-all group">
+                                        <div class="space-y-2">
+                                            <div class="flex items-start justify-between gap-2">
+                                                <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                                                    <span class="bg-toto-orange/20 text-toto-orange border border-toto-orange/40 text-[9px] font-black px-1.5 py-0.5 rounded tracking-wide uppercase">ԹԵԳ</span>
+                                                    <h4 class="text-xs font-bold text-white group-hover:text-toto-orange transition-colors">${tag.name}</h4>
+                                                </div>
+                                                <div>${getRiskBadge(tag.risk)}</div>
+                                            </div>
+                                            <p class="text-[11px] text-gray-400 leading-relaxed">${tag.desc}</p>
+                                        </div>
+                                        <div class="pt-2 border-t border-obsidian-border/40 flex justify-end">
+                                            <button onclick="shortcutToSimulator('${tag.name}')" class="text-[11px] text-toto-orange hover:text-white font-semibold flex items-center space-x-1 group-hover:translate-x-1 transition-all">
+                                                <span>Սիմուլյատոր ➔</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if (html === '') {
+                html = `
+                    <div class="bg-obsidian-card border border-obsidian-border rounded-xl p-8 text-center text-gray-400">
+                        <i class="fa-solid fa-magnifying-glass text-2xl mb-2 text-toto-orange"></i>
+                        <p class="text-sm font-semibold">Համապատասխան թեգեր չեն գտնվել:</p>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function toggleAccordion(catId) {
+            accordionStates[catId] = !accordionStates[catId];
+            renderTaxonomy();
+        }
+
+        function toggleAllAccordions(openState) {
+            categories.forEach(cat => {
+                accordionStates[cat.id] = openState;
+            });
+            renderTaxonomy();
+        }
+
+        function setRiskFilter(risk) {
+            activeRiskFilter = risk;
+            document.querySelectorAll('.risk-pill').forEach(btn => {
+                if (btn.getAttribute('data-risk') === risk) {
+                    btn.className = "risk-pill active-pill border border-toto-orange bg-toto-orange/10 text-toto-orange text-xs px-3 py-1 rounded-full font-medium transition-all";
+                } else {
+                    btn.className = "risk-pill border border-obsidian-border text-gray-400 hover:bg-obsidian-hover text-xs px-3 py-1 rounded-full font-medium transition-all";
+                }
+            });
+            renderTaxonomy();
+        }
+
+        function filterTaxonomy() {
+            renderTaxonomy();
+        }
+
+        function shortcutToSimulator(tagName) {
+            activeSimulatorTags = new Set([tagName]);
+            activePresetId = null;
+            renderPresetsGrid();
+            renderSimulatorChips();
+            updateDecisionEngine();
+            switchTab('tab2');
+            showToast(`Թեգը "${tagName}" ավելացվեց սիմուլյատորում`);
+        }
+
+        // RENDER TAB 2: PRESETS & SIMULATOR CHIPS
+        function renderPresetsGrid() {
+            const grid = document.getElementById('presets-grid');
+            grid.innerHTML = sopPresets.map(preset => {
+                const isActive = activePresetId === preset.id;
+                return `
+                    <button onclick="applyPreset(${preset.id})" class="p-2.5 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between ${
+                        isActive 
+                        ? 'bg-toto-orange/10 border-toto-orange text-white glowing-border' 
+                        : 'bg-obsidian-base border-obsidian-border hover:border-gray-500 text-gray-300'
+                    }">
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[11px] font-bold ${isActive ? 'text-toto-orange' : 'text-gray-400'}">${preset.title}</span>
+                                ${isActive ? '<span class="text-[9px] bg-toto-orange text-white px-1.5 py-0.2 rounded font-extrabold">✓ ԱԿՏԻՎ</span>' : ''}
+                            </div>
+                            <p class="text-[10px] text-gray-400 line-clamp-2">${preset.desc}</p>
+                        </div>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function applyPreset(presetId) {
+            const preset = sopPresets.find(p => p.id === presetId);
+            if (!preset) return;
+            activePresetId = presetId;
+            activeSimulatorTags = new Set([...preset.tags]);
+            renderPresetsGrid();
+            renderSimulatorChips();
+            updateDecisionEngine();
+            showToast(`Ակտիվացված է Presets #${preset.id}: ${preset.title}`);
+        }
+
+        function renderSimulatorChips() {
+            const container = document.getElementById('simulator-chips-container');
+            container.innerHTML = categories.map(cat => `
+                <div class="space-y-2.5">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-obsidian-row border ${cat.color}">${cat.badge}</span>
+                        <h4 class="text-xs font-bold text-gray-300 uppercase tracking-wider">${cat.name.split(' (')[0]}</h4>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        ${cat.tags.map(tag => {
+                            const isSelected = activeSimulatorTags.has(tag.name);
+                            return `
+                                <button onclick="toggleTag('${tag.name}')" class="px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all duration-200 flex items-center space-x-1.5 ${
+                                    isSelected
+                                    ? 'bg-toto-orange text-white border-toto-orange shadow-md scale-105'
+                                    : 'bg-obsidian-base border-obsidian-border text-gray-300 hover:border-gray-500 hover:bg-obsidian-hover'
+                                }">
+                                    <i class="fa-solid ${isSelected ? 'fa-square-check' : 'fa-plus'} text-[11px]"></i>
+                                    <span>${tag.name}</span>
+                                </button>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleTag(tagName) {
+            if (activeSimulatorTags.has(tagName)) {
+                activeSimulatorTags.delete(tagName);
+            } else {
+                activeSimulatorTags.add(tagName);
+            }
+            activePresetId = null; // Unset preset if modified
+            renderPresetsGrid();
+            renderSimulatorChips();
+            updateDecisionEngine();
+        }
+
+        function resetSimulator() {
+            activeSimulatorTags.clear();
+            activePresetId = null;
+            renderPresetsGrid();
+            renderSimulatorChips();
+            updateDecisionEngine();
+            showToast("Սիմուլյատորի թեգերը մաքրված են");
+        }
+
+        // DECISION ENGINE BUSINESS LOGIC (EXACT MATCH FOR SPECIFIED RULES)
+        function updateDecisionEngine() {
+            const tags = Array.from(activeSimulatorTags);
+            
+            let state = 'Active (Ակտիվ)';
+            let reason = '—';
+            let badgeClass = 'status-badge-active';
+            let iconClass = 'fa-solid fa-circle-check';
+
+            // Explicit Rule Lists
+            const blockedTxTags = [
+                'KYC Verification', 
+                'KYCAID Static Link', 
+                'Verification via Call', 
+                'Selfie with Current Date', 
+                'Additional Verification Requested'
+            ];
+
+            const blockedTags = [
+                'Data Inconsistency', 
+                'Account Used by Another Person', 
+                'Edited Document (Photoshop)', 
+                'AI / Deepfake Document', 
+                'Bonus Fraud', 
+                'Underage (<18) / Minor Involved'
+            ];
+
+            const deletedTags = ['Fake User / Duplicate CNP'];
+
+            // Priority Check Rule Engine
+            const hasDeleted = tags.some(t => deletedTags.includes(t));
+            const hasBlocked = tags.some(t => blockedTags.includes(t));
+            const hasBlockedTx = tags.some(t => blockedTxTags.includes(t));
+            const hasBlacklistedAlone = tags.length === 1 && tags[0] === 'Blacklisted / Do Not Reopen';
+
+            if (hasDeleted) {
+                state = 'Deleted (Հեռացված)';
+                reason = 'Violation of terms and conditions';
+                badgeClass = 'status-badge-deleted';
+                iconClass = 'fa-solid fa-user-slash';
+            } else if (hasBlocked) {
+                state = 'Blocked (Բլոկավորված)';
+                badgeClass = 'status-badge-blocked';
+                iconClass = 'fa-solid fa-ban';
+
+                if (tags.includes('Underage (<18) / Minor Involved')) {
+                    reason = 'Underage Gambling';
+                } else if (tags.includes('Bonus Fraud')) {
+                    reason = 'Fraud or Suspicious Activity';
+                } else if (
+                    tags.includes('Data Inconsistency') || 
+                    tags.includes('Account Used by Another Person') || 
+                    tags.includes('Edited Document (Photoshop)') || 
+                    tags.includes('AI / Deepfake Document')
+                ) {
+                    reason = 'Identity Verification Issue';
+                } else {
+                    reason = 'Fraud or Suspicious Activity';
+                }
+            } else if (hasBlockedTx) {
+                state = 'Blocked For Transactions (Սահմանափակված)';
+                reason = 'Identity Verification Issue';
+                badgeClass = 'status-badge-blockedTx';
+                iconClass = 'fa-solid fa-triangle-exclamation';
+            } else if (hasBlacklistedAlone) {
+                // Rule specified: Blacklisted / Do Not Reopen -> Active when alone
+                state = 'Active (Ակտիվ)';
+                reason = '—';
+                badgeClass = 'status-badge-active';
+                iconClass = 'fa-solid fa-circle-check';
+            } else {
+                // Default fallback: Phone Number Not Owned, VIP w/o KYCaid, Tech Issue, Fast Games, etc. -> Active (Reason: "—")
+                state = 'Active (Ակտիվ)';
+                reason = '—';
+                badgeClass = 'status-badge-active';
+                iconClass = 'fa-solid fa-circle-check';
+            }
+
+            // Update DOM
+            const stateEl = document.getElementById('sim-account-state');
+            stateEl.className = `p-4 rounded-xl font-extrabold text-lg flex items-center justify-between transition-all ${badgeClass}`;
+            stateEl.innerHTML = `<span>${state}</span><i class="${iconClass}"></i>`;
+
+            document.getElementById('sim-system-reason').innerText = reason;
+
+            // Selected tags badges
+            const tagsBadgeContainer = document.getElementById('sim-selected-tags-badge');
+            if (tags.length === 0) {
+                tagsBadgeContainer.innerHTML = `<span class="text-xs text-gray-500 italic">Թեգեր ընտրված չեն</span>`;
+            } else {
+                tagsBadgeContainer.innerHTML = tags.map(t => `
+                    <span class="bg-obsidian-row border border-toto-orange/50 text-toto-orange text-xs font-semibold px-2.5 py-1 rounded-lg flex items-center space-x-1">
+                        <span>${t}</span>
+                        <i onclick="toggleTag('${t}')" class="fa-solid fa-xmark hover:text-white cursor-pointer ml-1"></i>
+                    </span>
+                `).join('');
+            }
+
+            // Generate Copyable CRM Note Output
+            const refId = document.getElementById('sim-reference-input').value.trim() || 'N/A';
+            const formattedTags = tags.length > 0 ? tags.join(' | ') : 'No Tags Selected';
+            
+            const crmNote = `[RISK ASSESSMENT REPORT]
+Reference ID: ${refId}
+Timestamp: ${new Date().toLocaleString('hy-AM')}
+Account State: ${state}
+System Reason: ${reason}
+Applied Tags: ${formattedTags}
+Action Required: Follow SOP Risk Decision Rules`;
+
+            document.getElementById('sim-crm-note').value = crmNote;
+        }
+
+        // COPY CRM NOTE TO CLIPBOARD
+        function copyCrmNote() {
+            const textarea = document.getElementById('sim-crm-note');
+            textarea.select();
+            textarea.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            showToast("CRM Note-ը հաջողությամբ պատճենվեց:");
+        }
+
+        // RENDER TAB 3: SOP MATRIX
+        const sopMatrixData = [
+            { id: 1, name: 'Phone Number Not Owned', tags: ['Phone Number Not Owned'], state: 'Active', reason: '—', sop: 'Ուղարկել SMS հաստատման կոդ նոր հեռախոսահամարին, վերիֆիկացնել տիրապետումը:' },
+            { id: 2, name: 'VIP without KYCaid', tags: ['Potential VIP client without KYCaid verification'], state: 'Active', reason: '—', sop: 'Փոխանցել VIP մենեջերին, ուղարկել KYCAID անհատական հղում 24 ժամվա ընթացքում:' },
+            { id: 3, name: 'Tech Issue / Compensation', tags: ['Tech Issue / Compensation'], state: 'Active', reason: '—', sop: 'Ստուգել խաղային սեսիան IT/Provider log-երով, անհրաժեշտության դեպքում կատարել manual credit:' },
+            { id: 4, name: 'Live / Fast Games Anomaly', tags: ['Live / Fast Games Anomaly'], state: 'Active', reason: '—', sop: 'Ուղարկել ռիսկի վերլուծաբանին bets history-ի խորացված մոնիտորինգի համար:' },
+            { id: 5, name: 'Verification Call / Selfie', tags: ['Verification via Call', 'Selfie with Current Date'], state: 'Blocked For Transactions', reason: 'Identity Verification Issue', sop: 'Սահմանափակել ելքագրումները: Կազմակերպել տեսազանգ + սելֆի ընթացիկ ամսաթվով:' },
+            { id: 6, name: 'Data Inconsistency / Photoshop', tags: ['Data Inconsistency', 'Edited Document (Photoshop)'], state: 'Blocked', reason: 'Identity Verification Issue', sop: 'Բլոկավորել աքաունթը: Պահանջել բնօրինակ փաստաթղթերի նոր լուսանկարներ առանց խմբագրման:' },
+            { id: 7, name: 'Bonus Fraud', tags: ['Bonus Fraud'], state: 'Blocked', reason: 'Fraud or Suspicious Activity', sop: 'Բլոկավորել աքաունթը, զրոյացնել ապօրինի ստացված բոնուսային միջոցները:' },
+            { id: 8, name: 'Blacklisted Alone', tags: ['Blacklisted / Do Not Reopen'], state: 'Active', reason: '—', sop: 'Մոնիտորինգի ենթարկել ակտիվությունը: Չթույլատրել նոր աքաունթների վերաբացում:' },
+            { id: 9, name: 'Underage (<18)', tags: ['Underage (<18) / Minor Involved'], state: 'Blocked', reason: 'Underage Gambling', sop: 'Բլոկավորել աքաունթը, վերադարձնել սկզբնական դեպոզիտի մնացորդը, փակել հաշիվը:' },
+            { id: 10, name: 'Fake User / Duplicate CNP', tags: ['Fake User / Duplicate CNP'], state: 'Deleted', reason: 'Violation of terms and conditions', sop: 'Վերջնական հեռացնել / ապաակտիվացնել աքաունթը համակարգից:' }
+        ];
+
+        function renderSopMatrix() {
+            const tbody = document.getElementById('sop-matrix-body');
+            const searchVal = document.getElementById('sop-search').value.toLowerCase().trim();
+
+            const filteredData = sopMatrixData.filter(row => {
+                return row.name.toLowerCase().includes(searchVal) ||
+                       row.tags.join(' ').toLowerCase().includes(searchVal) ||
+                       row.state.toLowerCase().includes(searchVal) ||
+                       row.reason.toLowerCase().includes(searchVal) ||
+                       row.sop.toLowerCase().includes(searchVal);
+            });
+
+            tbody.innerHTML = filteredData.map(row => {
+                let badgeClass = 'status-badge-active';
+                if (row.state === 'Blocked For Transactions') badgeClass = 'status-badge-blockedTx';
+                if (row.state === 'Blocked') badgeClass = 'status-badge-blocked';
+                if (row.state === 'Deleted') badgeClass = 'status-badge-deleted';
+
+                return `
+                    <tr class="hover:bg-obsidian-row/60 transition-colors">
+                        <td class="p-3.5 text-center font-bold text-gray-500">${row.id}</td>
+                        <td class="p-3.5 font-bold text-white">${row.name}</td>
+                        <td class="p-3.5">
+                            <div class="flex flex-wrap gap-1">
+                                ${row.tags.map(t => `<span class="bg-obsidian-base border border-obsidian-border text-toto-orange px-2 py-0.5 rounded text-[11px] font-semibold">${t}</span>`).join('')}
+                            </div>
+                        </td>
+                        <td class="p-3.5">
+                            <span class="px-2.5 py-1 rounded-lg font-bold text-[11px] ${badgeClass}">${row.state}</span>
+                        </td>
+                        <td class="p-3.5 font-mono text-gray-300">${row.reason}</td>
+                        <td class="p-3.5 text-gray-300 text-xs leading-relaxed max-w-md">${row.sop}</td>
+                        <td class="p-3.5 text-center">
+                            <button onclick="applyPreset(${row.id}); switchTab('tab2');" class="px-3 py-1.5 bg-toto-orange/10 hover:bg-toto-orange text-toto-orange hover:text-white border border-toto-orange/40 rounded-lg font-semibold text-[11px] transition-all whitespace-nowrap">
+                                Փորձարկել ➔
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterSopMatrix() {
+            renderSopMatrix();
+        }
+
+        // PRINT / EXPORT PDF FUNCTION
+        function triggerPrint() {
+            window.print();
+        }
+
+        // CUSTOM TOAST NOTIFICATION
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toast-message');
+            msgEl.innerText = message;
+            
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
